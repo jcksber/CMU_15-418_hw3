@@ -1,6 +1,6 @@
 /**
  * Parallel VLSI Wire Routing via OpenMP
- * Name 1(andrew_id 1), Name 2: Charlie Cai (qcai)
+ * Name 1: Jack Kasbeer (jkasbeer), Name 2: Charlie Cai (qcai)
  */
 
 #ifndef __WIREOPT_H__

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Merge stdout and stderr into one output file
+#PBS -j oe
+
+#PBS -q phi
+
+# Move to my $SCRATCH directory.
+cd $SCRATCH
+
+APP_NAME=wireroute # CHANGE THIS TO THE NAME OF YOUR PROGRAM
+
+# Set this to the important directory.
+execdir=PROGDIR # The directory that contains your wire routing program
+exe=$APP_NAME # The name of your wire routing program
+input=INPUT # The name of the input file
+args="-f INPUT -n THREADS"
+inputdir=$execdir/inputs/timeinput # The directory for test cases
+
+
+# Copy executable to $SCRATCH.
+cp $execdir/$exe $exe
+cp $inputdir/$input $input
+
+# Run my executable
+perf stat -e cache-misses ./$exe $args

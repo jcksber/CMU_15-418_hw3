@@ -1,0 +1,66 @@
+# Directory structure
+├── code
+│   ├── inputs
+│   │   ├── problemsize
+    	    Input for the question to explore the effect of problem size
+│   │   ├── testinput
+│   │   └── timeinput
+│   ├── jobs
+│   │   ├── batch_generate.sh
+    	    Generate jobs in batch, specify the arguments for the program here
+│   │   ├── example.job.template
+    	    The template for generating the jobs
+│   │   └── generate_jobs.sh
+    	    The script for the jobs
+│   ├── latedays
+│   │   └── submit.sh
+    	    The script to submit all the jobs in jobs folder to latedays.
+│   ├── Makefile
+│   ├── mic.h
+	    Macros for offload the program to Xeon Phi
+│   ├── validate.py
+        Scripts to validate the consistency of output wire routes and cost array, please let me know if you find
+	any problems with this script
+	Run "python validate.py -h" to see the instructions to use the script
+│   ├── WireGrapher.java
+        Graph the input wires, see handout for instructions
+│   ├── wireroute.cpp
+	The code for reading and parsing command line argument and a offload pragma example
+	Note that this is provided primarily as an example for offload code to Xeon Phi, you 
+	are free to change any code as long as it works for you, we don't have any auto-grader 
+	that depend on this code.
+│   ├── wireroute.h
+├── examples
+    Examples for OpenMP
+│   ├── hello.c
+│   ├── loop.c
+│   ├── Makefile
+│   ├── README
+│   └── sqrt.c
+├── README
+    This file
+└── tutorials
+    └── openmp.pdf
+        OpenMP tutorial
+
+# Get started
+0. Read handout
+1. Read README
+2. Read wireroute.cpp and wireroute.h including comments
+3. Define wire_t and any additional data structures you need
+4. Offload additional data to(if any) Xeon Phi using similar pragma
+5. Implement the serial version of the algorithm and test locally using ``make cpu'', you can use validate.py to validate the result
+6. Parallelize the algorithm and test locally
+7. Submit to latedays queue for performance testing
+8. Answer questions on the handout
+
+
+# When to submit to latedays
+We suggest you to develop and debug your program without submitting jobs to the job queue in latedays. ``make cpu'' will generate the code runnable on machines that has OpenMP installed. If you log into latedays.andrew.cmu.edu, you'll be able to run the program compiled from ``make cpu''.
+
+# How to generate and submit jobs to latedays?
+0. Change the APP_NAME in jobs/example.job.template to the name of your binary wire routing program
+1. Change the inputdir in jobs/example.job.template to the directory of input file.
+2. Change the $threads and $inputs in jobs/batch_generate.sh to the values you want, these are thread and input arguments feed to your wire routing program.
+3. Run ``make submit'', you'll be able to see the result of the program in ``latedays'' folder.
+

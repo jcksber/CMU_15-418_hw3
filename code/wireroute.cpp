@@ -1,6 +1,6 @@
 /**
  * Parallel VLSI Wire Routing via OpenMP
- * Jack Kasbeer (jkasbeer), Name 2: Charlie Cai (qcai)
+ * Jack Kasbeer (jkasbeer), Name 2(andrew_id 2)
  */
 
 #include "wireroute.h"
@@ -62,7 +62,7 @@ int main(int argc, const char *argv[])
 
   auto init_start = Clock::now();
   double init_time = 0;
-
+ 
   _argc = argc - 1;
   _argv = argv + 1;
 
@@ -82,7 +82,7 @@ int main(int argc, const char *argv[])
     show_help(argv[0]);
     return 1;
   }
-
+  
   printf("Number of threads: %d\n", num_of_threads);
   printf("Probability parameter for simulated annealing: %lf.\n", SA_prob);
   printf("Number of simulated anneling iterations: %d\n", SA_iters);
@@ -94,12 +94,15 @@ int main(int argc, const char *argv[])
     printf("Unable to open file: %s.\n", input_filename);
     return 1;
   }
-
+  
   int dim_x, dim_y;
   int num_of_wires;
-
+  // Parse for dimensions & num wires
   fscanf(input, "%d %d\n", &dim_x, &dim_y);
   fscanf(input, "%d\n", &num_of_wires);
+
+  // while !EOF, %d %d %d %d = (start pt) (end pt)
+  // for each wire, add start & end pt's
 
   wire_t *wires = (wire_t *)calloc(num_of_wires, sizeof(wire_t));
   /* Read the grid dimension and wire information from file */
@@ -110,6 +113,8 @@ int main(int argc, const char *argv[])
 
 
   /* Initailize additional data structures needed in the algorithm */
+  // 1. Structure to store "no touch points" (i.e. pt's with higher costs)??
+  // 
 
   error = 0;
 
@@ -120,7 +125,7 @@ int main(int argc, const char *argv[])
   double compute_time = 0;
 #ifdef RUN_MIC /* Use RUN_MIC to distinguish between the target of compilation */
 
-  /* This pragma means we want the code in the following block be executed in
+  /* This pragma means we want the code in the following block be executed in 
    * Xeon Phi.
    */
 #pragma offload target(mic) \
@@ -136,7 +141,7 @@ int main(int argc, const char *argv[])
 
   compute_time += duration_cast<dsec>(Clock::now() - compute_start).count();
   printf("Computation Time: %lf.\n", compute_time);
-
+  
   /* Write wires and costs to files */
 
   return 0;

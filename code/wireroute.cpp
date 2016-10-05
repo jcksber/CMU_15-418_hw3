@@ -1,6 +1,6 @@
 /**
  * Parallel VLSI Wire Routing via OpenMP
- * Name 1(andrew_id 1), Name 2(andrew_id 2)
+ * Jack Kasbeer (jkasbeer), Name 2(andrew_id 2)
  */
 
 #include "wireroute.h"

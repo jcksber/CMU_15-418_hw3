@@ -11,9 +11,9 @@
 typedef struct
 {
   /* Define the data structure for wire here */
-  // 1. every point on path:
-  // array [x y x y ...] --> start, end, else
-  // sorted such that x0 <= x1 <= ... && y0 <= y1 <= ...
+	int numBends;  // 0, 1, or 2
+	int bends[4];  // bend 1, bend 2 (or no empty)
+	int bounds[4]; // start point, end point ([x y x y])
 } wire_t;
 
 typedef int cost_t;

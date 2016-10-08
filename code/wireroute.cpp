@@ -146,6 +146,24 @@ int main(int argc, const char *argv[])
      * Feel free to structure the algorithm into different functions
      * Don't use global variables.
      * Use OpenMP to parallelize the algorithm. */
+     // NOTES
+     // Break up work by cells
+
+     // ALGO
+     // 1. Calculate cost of current path, if not known. This is the current min path.
+     // 2. Consider all paths which first travel horizontally.  
+     //    If any costs less than the current min path, that is the new min path.
+     // 3. Same as (2) using vertical paths.
+     // 4. With probability 1 - P, choose the current min path.  Otherwise, choose a 
+     //    a path uniformly at random from the space of delt_x + delt_y possible routes.
+
+     // STEPS
+     // 1. Compute one possible path for each wire & save as prevPath -- PARALLEL
+     // 2. Initialize cost array with random wire paths -- parallel by wire
+
+     // FUNCTIONS
+     // void init()
+     // path_t compute_paths()
   }
 
   compute_time += duration_cast<dsec>(Clock::now() - compute_start).count();

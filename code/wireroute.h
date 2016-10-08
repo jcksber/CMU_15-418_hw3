@@ -8,15 +8,32 @@
 
 #include <omp.h>
 
+/* Path struct
+ * Defined by start & end points and 
+ */
+typedef struct 
+{
+	int numBends;   // 0, 1, or 2
+	int bends[4];   // bend 1, bend 2 (or no empty)
+	int bounds[4];  // start point, end point ([x y x y]) CONSTANT VALUES
+} path_t;
+
+/* Wire struct
+ * Defined as two paths
+ */
 typedef struct
 {
-  /* Define the data structure for wire here */
-	int numBends;  // 0, 1, or 2
-	int bends[4];  // bend 1, bend 2 (or no empty)
-	int bounds[4]; // start point, end point ([x y x y])
+  // Current path 'definition'
+	path_t *currentPath;
+	// Previous path 'definition'
+	path_t *prevPath;
 } wire_t;
 
-typedef int cost_t;
+typedef struct 
+{
+	int lock;
+	int val;
+} cost_t;
 
 const char *get_option_string(const char *option_name, const char *default_value);
 int get_option_int(const char *option_name, int default_value);

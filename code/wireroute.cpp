@@ -107,12 +107,11 @@ int main(int argc, const char *argv[])
   while(count < num_of_wires){
     int s_x, s_y, e_x, e_y;
     fscanf(input, "%d %d %d %d\n", &s_x, &s_y, &e_x, &e_y);
-    wire_t w = wires[count];
-    w.numBends = 0;
-    w.bounds[0] = s_x;
-    w.bounds[1] = s_y;
-    w.bounds[2] = e_x;
-    w.bounds[3] = e_y;
+    wires[count].numBends = 0;
+    wires[count].bounds[0] = s_x;
+    wires[count].bounds[1] = s_y;
+    wires[count].bounds[2] = e_x;
+    wires[count].bounds[3] = e_y;
     count++;
   }
 

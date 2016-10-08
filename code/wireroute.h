@@ -1,6 +1,6 @@
 /**
  * Parallel VLSI Wire Routing via OpenMP
- * Jack Kasbeer (jkasbeer), Name 2(andrew_id 2)
+ * Jack Kasbeer (jkasbeer), Qifang Cai (qcai)
  */
 
 #ifndef __WIREOPT_H__
@@ -11,7 +11,7 @@
 typedef struct
 {
   /* Define the data structure for wire here */
-  // 1. every point on path: 
+  // 1. every point on path:
   // array [x y x y ...] --> start, end, else
   // sorted such that x0 <= x1 <= ... && y0 <= y1 <= ...
 } wire_t;

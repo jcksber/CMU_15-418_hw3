@@ -101,21 +101,31 @@ int main(int argc, const char *argv[])
   fscanf(input, "%d %d\n", &dim_x, &dim_y);
   fscanf(input, "%d\n", &num_of_wires);
 
-  // while !EOF, %d %d %d %d = (start pt) (end pt)
-  // for each wire, add start & end pt's
-
   wire_t *wires = (wire_t *)calloc(num_of_wires, sizeof(wire_t));
   /* Read the grid dimension and wire information from file */
-
+  int count = 0;
+  while(count < num_of_wires){
+    int s_x, s_y, e_x, e_y;
+    fscanf(input, "%d %d %d %d\n", &s_x, &s_y, &e_x, &e_y);
+    wire_t w = wires[count];
+    w.numBends = 0;
+    w.bounds[0] = s_x;
+    w.bounds[1] = s_y;
+    w.bounds[2] = e_x;
+    w.bounds[3] = e_y;
+    count++;
+  }
 
   cost_t *costs = (cost_t *)calloc(dim_x * dim_y, sizeof(cost_t));
   /* Initialize cost matrix */
-
+  for( int y = 0; y < dim_y; y++){
+    for( int x = 0; x < dim_x; x++){
+      costs[y*dim_y + x] = 0;
+    }
+  }
 
   /* Initailize additional data structures needed in the algorithm */
   // 1. Structure to store "no touch points" (i.e. pt's with higher costs)??
-  //
-
   error = 0;
 
   init_time += duration_cast<dsec>(Clock::now() - init_start).count();
@@ -144,5 +154,9 @@ int main(int argc, const char *argv[])
 
   /* Write wires and costs to files */
 
+
+  // free the alocated wire
+  delete[] wires;
+  delete[] costs;
   return 0;
 }

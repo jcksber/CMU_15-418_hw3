@@ -133,6 +133,15 @@ int main(int argc, const char *argv[])
   init_time += duration_cast<dsec>(Clock::now() - init_start).count();
   printf("Initialization Time: %lf.\n", init_time);
 
+  // Init Param
+  omp_set_num_threads(num_of_threads);
+  int board_max_cost;
+  int board_total_cost;
+
+  // init wires
+
+  // init board
+
   auto compute_start = Clock::now();
   double compute_time = 0;
 #ifdef RUN_MIC /* Use RUN_MIC to distinguish between the target of compilation */
@@ -173,6 +182,8 @@ int main(int argc, const char *argv[])
   printf("Computation Time: %lf.\n", compute_time);
 
   /* Write wires and costs to files */
+  // Output current wire set
+  // Ouptut current cost set
 
 
   // free the alocated wire

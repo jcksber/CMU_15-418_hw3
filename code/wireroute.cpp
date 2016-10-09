@@ -144,9 +144,6 @@ int main(int argc, const char *argv[])
 
   // Init Param
   omp_set_num_threads(num_of_threads);
-  int board_max_cost;
-  int board_total_cost;
-
   // init wires
 
   // init board

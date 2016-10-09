@@ -107,11 +107,13 @@ int main(int argc, const char *argv[])
   while(count < num_of_wires){
     int s_x, s_y, e_x, e_y;
     fscanf(input, "%d %d %d %d\n", &s_x, &s_y, &e_x, &e_y);
-    wires[count].numBends = 0;
-    wires[count].bounds[0] = s_x;
-    wires[count].bounds[1] = s_y;
-    wires[count].bounds[2] = e_x;
-    wires[count].bounds[3] = e_y;
+    wires[count].prevPath = NULL;
+    wires[count].currentPath = (path_t*)calloc(1, sizeof(path_t));
+    wires[count].currentPath->numBends = 0;
+    wires[count].currentPath->bounds[0] = s_x;
+    wires[count].currentPath->bounds[1] = s_y;
+    wires[count].currentPath->bounds[2] = e_x;
+    wires[count].currentPath->bounds[3] = e_y;
     count++;
   }
 
@@ -119,7 +121,8 @@ int main(int argc, const char *argv[])
   /* Initialize cost matrix */
   for( int y = 0; y < dim_y; y++){
     for( int x = 0; x < dim_x; x++){
-      costs[y*dim_y + x] = 0;
+      costs[y*dim_y + x].lock = 0;
+      costs[y*dim_y + x].val = 0;
     }
   }
 
@@ -151,10 +154,10 @@ int main(int argc, const char *argv[])
 
      // ALGO
      // 1. Calculate cost of current path, if not known. This is the current min path.
-     // 2. Consider all paths which first travel horizontally.  
+     // 2. Consider all paths which first travel horizontally.
      //    If any costs less than the current min path, that is the new min path.
      // 3. Same as (2) using vertical paths.
-     // 4. With probability 1 - P, choose the current min path.  Otherwise, choose a 
+     // 4. With probability 1 - P, choose the current min path.  Otherwise, choose a
      //    a path uniformly at random from the space of delt_x + delt_y possible routes.
 
      // STEPS
@@ -173,6 +176,10 @@ int main(int argc, const char *argv[])
 
 
   // free the alocated wire
+  for(int i = 0; i < num_of_wires; i++){
+    delete[] wires[i].currentPath;
+    delete[] wires[i].prevPath;
+  }
   delete[] wires;
   delete[] costs;
   return 0;

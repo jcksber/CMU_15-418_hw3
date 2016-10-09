@@ -54,6 +54,14 @@ static void show_help(const char *program_path)
     printf("\t-i <SA_iters>\n");
 }
 
+/* initWire() *
+ * Create a wire with a simple path
+ */
+wire_t initWire()
+{
+
+}
+
 int main(int argc, const char *argv[])
 {
   using namespace std::chrono;
@@ -95,13 +103,14 @@ int main(int argc, const char *argv[])
     return 1;
   }
 
+  // Parse for dimensions & num wires
   int dim_x, dim_y;
   int num_of_wires;
-  // Parse for dimensions & num wires
   fscanf(input, "%d %d\n", &dim_x, &dim_y);
   fscanf(input, "%d\n", &num_of_wires);
-
+  // Allocate for array of wires
   wire_t *wires = (wire_t *)calloc(num_of_wires, sizeof(wire_t));
+
   /* Read the grid dimension and wire information from file */
   int count = 0;
   while(count < num_of_wires){

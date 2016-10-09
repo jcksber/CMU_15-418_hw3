@@ -41,5 +41,7 @@ typedef struct
 const char *get_option_string(const char *option_name, const char *default_value);
 int get_option_int(const char *option_name, int default_value);
 float get_option_float(const char *option_name, float default_value);
+/* Our helper functions */
+wire_t initWire();
 
 #endif

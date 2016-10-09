@@ -29,6 +29,9 @@ typedef struct
 	path_t *prevPath;
 } wire_t;
 
+/* Cost_t definition 
+ * Just an integer, but with a lock for cost array writes per cell
+ */
 typedef struct 
 {
 	int lock;

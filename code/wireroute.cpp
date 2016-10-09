@@ -57,10 +57,11 @@ static void show_help(const char *program_path)
 /* initWire() *
  * Create a wire with a simple path
  */
+/*
 wire_t initWire()
 {
-
 }
+*/
 
 int main(int argc, const char *argv[])
 {
@@ -125,13 +126,15 @@ int main(int argc, const char *argv[])
     wires[count].currentPath->bounds[3] = e_y;
     count++;
   }
-
-  cost_t *costs = (cost_t *)calloc(dim_x * dim_y, sizeof(cost_t));
+  cost_t *costs = (cost_t *)calloc(1, sizeof(cost_t));
+  costs->prev_max = num_of_wires;
+  // no init for the prev_total of cost_t
+  costs->board = (cost_cell_t *)calloc(dim_x * dim_y, sizeof(cost_cell_t));
   /* Initialize cost matrix */
   for( int y = 0; y < dim_y; y++){
     for( int x = 0; x < dim_x; x++){
-      costs[y*dim_y + x].lock = 0;
-      costs[y*dim_y + x].val = 0;
+      costs->board[y*dim_y + x].val = 0;
+      omp_init_lock(&costs->board[y*dim_y + x].lock);
     }
   }
 

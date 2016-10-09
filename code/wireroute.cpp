@@ -147,8 +147,6 @@ int main(int argc, const char *argv[])
      * Feel free to structure the algorithm into different functions
      * Don't use global variables.
      * Use OpenMP to parallelize the algorithm. */
-     // NOTES
-     // Break up work by cells
 
      // ALGO
      // 1. Calculate cost of current path, if not known. This is the current min path.

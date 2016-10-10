@@ -18,7 +18,7 @@ typedef struct
 	int bounds[4];  // start point, end point ([x y x y]) CONSTANT VALUES
 } path_t;
 
-/* Wire struct
+/* wire_t *
  * Defined as two paths
  */
 typedef struct
@@ -29,12 +29,12 @@ typedef struct
 	path_t *prevPath;
 } wire_t;
 
-/* Cost_t definition 
+/* cost_t * 
  * Just an integer, but with a lock for cost array writes per cell
  */
 typedef struct 
 {
-	int lock;
+	omp_lock_t lock;
 	int val;
 } cost_t;
 

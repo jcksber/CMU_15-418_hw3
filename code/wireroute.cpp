@@ -10,6 +10,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <assert.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <omp.h>
 #include "mic.h"
 
@@ -53,6 +55,9 @@ static void show_help(const char *program_path)
     printf("\t-p <SA_prob>\n");
     printf("\t-i <SA_iters>\n");
 }
+/////////////////////////////////////
+// HELPER FUNCTION
+////////////////////////////////////
 
 /* initWire() *
  * Create a wire with a simple path
@@ -62,6 +67,19 @@ wire_t initWire()
 {
 }
 */
+
+void new_rand_path(wire_t *wire){
+  //overwrite previous pathi
+  std::memcpy(wire->prevPath, wire->currentPath, sizeof(wire_t));
+  int s_x, s_y, e_x, e_y, dx, dy;
+  s_x = wire->currentPath->bounds[0];
+  s_y = wire->currentPath->bounds[1];
+  e_x = wire->currentPath->bounds[2];
+  e_y = wire->currentPath->bounds[3];
+  dx
+}
+
+/////////////////////////////////////////
 
 int main(int argc, const char *argv[])
 {
@@ -117,7 +135,7 @@ int main(int argc, const char *argv[])
   while(count < num_of_wires){
     int s_x, s_y, e_x, e_y;
     fscanf(input, "%d %d %d %d\n", &s_x, &s_y, &e_x, &e_y);
-    wires[count].prevPath = NULL;
+    wires[count].prevPath = (path_t*)calloc(1, sizeof(path_t));
     wires[count].currentPath = (path_t*)calloc(1, sizeof(path_t));
     wires[count].currentPath->numBends = 0;
     wires[count].currentPath->bounds[0] = s_x;
@@ -199,6 +217,7 @@ int main(int argc, const char *argv[])
     delete[] wires[i].prevPath;
   }
   delete[] wires;
+  delete[] costs->board;
   delete[] costs;
   return 0;
 }

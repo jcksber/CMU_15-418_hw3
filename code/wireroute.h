@@ -19,7 +19,7 @@ typedef struct
 } path_t;
 
 /* wire_t *
-/* Wire struct - define a single wire
+ * Wire struct - define a single wire
  * Defined as two paths
  */
 typedef struct
@@ -31,7 +31,7 @@ typedef struct
 } wire_t;
 
 /* cost_t *
-/* cost_cell_t definition
+ * cost_cell_t definition
  * Just an integer, but with a lock for cost array writes per cell
  */
 typedef struct
@@ -45,7 +45,7 @@ typedef struct
 typedef struct
 {
   int prev_max;
-  int prev_total;
+  int prev_aggr_total;
   cost_cell_t* board;
 } cost_t;
 
@@ -55,5 +55,7 @@ float get_option_float(const char *option_name, float default_value);
 /* Our helper functions */
 
 //wire_t initWire();
+
+void new_rand_path(wire_t *wire);
 
 #endif

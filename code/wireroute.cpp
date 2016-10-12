@@ -59,6 +59,9 @@ static void show_help(const char *program_path)
 // HELPER FUNCTION
 ////////////////////////////////////
 
+/* new_rand_path *
+ * Generate a random path in the space of delta_x + delta_y
+ */
 void new_rand_path(wire_t *wire){
   //overwrite previous pathi
   int bend = 0;
@@ -156,8 +159,6 @@ int main(int argc, const char *argv[])
     }
   }
 
-  /* Initailize additional data structures needed in the algorithm */
-  // 1. Structure to store "no touch points" (i.e. pt's with higher costs)??
   error = 0;
 
   init_time += duration_cast<dsec>(Clock::now() - init_start).count();
@@ -178,14 +179,9 @@ int main(int argc, const char *argv[])
   inout(costs: length(dim_x*dim_y) INOUT)
 #endif
   {
-    /* Implement the wire routing algorithm here
-     * Feel free to structure the algorithm into different functions
-     * Don't use global variables.
-     * Use OpenMP to parallelize the algorithm. 
-     */
-
     // PRIVATE variables
-    int i;
+    int i, j;
+
     // SHARED variables
     cost_cell_t *B = costs->board;
 
@@ -198,6 +194,7 @@ int main(int argc, const char *argv[])
     // 4. Same as (2), using vertical paths.
 
     // Idea for later ?? Split up work of updating cost array by cells versus by wires
+    //                   Structure to store "no touch points" (i.e. pt's with higher costs)??
 
     /* INIT LOOP */
     /* Parallel by wire, initialize all wire 'first' paths (create a start board) */
@@ -206,11 +203,11 @@ int main(int argc, const char *argv[])
                          private(i)      \
                          shared(wires)   \
                          schedule(dynamic)
-      for (i = 0; i < num_of_threads; i++) // 1 iteration
+      for (i = 0; i < num_of_wires; i++) // 1 iteration
       {
         new_rand_path( &(wires[i]) );
       } /* implicit barrier */
-
+    /* ############## END PRAGMA ############# */    
     /* MAIN LOOP */
     for (i = 0; i < SA_iters; i++) // N iterations
     {
@@ -224,6 +221,7 @@ int main(int argc, const char *argv[])
         {
 
         } /* implicit barrier */
+      /* ############## END PRAGMA ############# */  
 
       /* Parallel by wire, calculate cost of current path */
 

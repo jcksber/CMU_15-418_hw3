@@ -181,7 +181,7 @@ int main(int argc, const char *argv[])
     /* Implement the wire routing algorithm here
      * Feel free to structure the algorithm into different functions
      * Don't use global variables.
-     * Use OpenMP to parallelize the algorithm. 
+     * Use OpenMP to parallelize the algorithm.
      */
 
     // PRIVATE variables
@@ -206,7 +206,7 @@ int main(int argc, const char *argv[])
                          private(i)      \
                          shared(wires)   \
                          schedule(dynamic)
-      for (i = 0; i < num_of_threads; i++) // 1 iteration
+      for (i = 0; i < num_of_wires; i++) // 1 iteration
       {
         new_rand_path( &(wires[i]) );
       } /* implicit barrier */

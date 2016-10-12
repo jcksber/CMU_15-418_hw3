@@ -10,6 +10,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <assert.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <omp.h>
 #include "mic.h"
 
@@ -63,19 +65,16 @@ static void show_help(const char *program_path)
 void new_rand_path(wire_t *wire){
   //overwrite previous pathi
   int bend = 0;
-  memcpy(wire->prevPath, wire->currentPath, sizeof(wire_t));
+  std::memcpy(wire->prevPath, wire->currentPath, sizeof(wire_t));
   int s_x, s_y, e_x, e_y, dy, yp;
   s_x = wire->currentPath->bounds[0];
   s_y = wire->currentPath->bounds[1];
   e_x = wire->currentPath->bounds[2];
   e_y = wire->currentPath->bounds[3];
   dy = abs(e_y - s_y);
-  if( s_y < e_y )  yp = s_y + ((rand() % dy) /1);
-  else yp = s_y - ((rand() % dy) /1);
-  if(s_x != e_x){
-    bend += 1;
-    if(e_y != yp) bend +=1;
-  }
+  yp = s_y + ((rand() % dy) /1);
+  if(s_x != e_x) bend += 1;
+  if(e_y != yp) bend +=1;
   wire->currentPath->bends[0] = s_x;
   wire->currentPath->bends[1] = yp;
   wire->currentPath->bends[2] = e_x;
@@ -159,7 +158,7 @@ int main(int argc, const char *argv[])
       omp_init_lock(&costs->board[y*dim_y + x].lock);
     }
   }
-  fclose(input);
+
   error = 0;
 
   init_time += duration_cast<dsec>(Clock::now() - init_start).count();
@@ -180,11 +179,6 @@ int main(int argc, const char *argv[])
   inout(costs: length(dim_x*dim_y) INOUT)
 #endif
   {
-    /* Implement the wire routing algorithm here
-     * Feel free to structure the algorithm into different functions
-     * Don't use global variables.
-     * Use OpenMP to parallelize the algorithm.
-     */
     // PRIVATE variables
     int i, j;
 
@@ -214,7 +208,7 @@ int main(int argc, const char *argv[])
       {
         new_rand_path( &(wires[i]) );
       } /* implicit barrier */
-    /* ############## END PRAGMA ############# */
+    /* ############## END PRAGMA ############# */    
     /* MAIN LOOP */
     for (i = 0; i < SA_iters; i++) // N iterations
     {
@@ -274,9 +268,11 @@ int main(int argc, const char *argv[])
                   s_x += dir; // add/subtract a column
                 } // End point
                 b = &B[(row + e_x)];
-                omp_set_lock(&b->lock);      
+                /*### UPDATING CELL: CRITICAL REGION ###*/
+                omp_set_lock(&b->lock);     
                   b->val += 1;
                 omp_unset_lock(&b->lock);
+                /*######################################*/
               }
               // VERTICAL: only y changes along path
               else 
@@ -310,7 +306,7 @@ int main(int argc, const char *argv[])
 
 
         } /* implicit barrier */
-      /* ############## END PRAGMA ############# */
+      /* ############## END PRAGMA ############# */  
 
       /* Parallel by wire, calculate cost of current path */
 
@@ -326,59 +322,11 @@ int main(int argc, const char *argv[])
   printf("Computation Time: %lf.\n", compute_time);
 
   /* Write wires and costs to files */
-  FILE *outputWire, *outputCost;
-  char costFileName[128] = "costs_";
-  char wireFileName[128] = "output_";
-  strcat(costFileName, argv[0]);
-  strcat(wireFileName, argv[0]);
-  strcat(wireFileName, "_");
-  strcat(costFileName, "_");
-  char buf[5];
-  snprintf(buf, sizeof(buf), "%d", num_of_threads);
-  strcat(wireFileName, buf);
-  strcat(costFileName, buf);
-  strcat(wireFileName, ".txt");
-  strcat(costFileName, ".txt");
+  // Output current wire set
+  // Ouptut current cost set
 
-  outputWire = fopen(wireFileName, "w");
-  outputCost = fopen(costFileName, "w");
-  if (outputCost == NULL || outputWire == NULL)
-  {
-    printf("Error opening file!\n");
-    exit(1);
-  }
 
-  fprintf(outputWire, "%d %d\n", dim_x, dim_y);
-  fprintf(outputCost, "%d %d\n", dim_x, dim_y);
-  /*wrting to Cost */
-  for(int row = 0 ; row < dim_y; row++){
-    for(int col = 0; col < dim_x; col++){
-      fprintf(outputCost, "%d ", costs->board[row*dim_y + col].val);
-    }
-    fprintf(outputCost, "\n");
-  }
-  /*wrting to wire */
-  fprintf(outputWire, "%d\n", num_of_wires);
-  for(int w_count = 0; w_count < num_of_wires; w_count++){
-    fprintf(outputWire, "%d %d ", wires[w_count].currentPath->bounds[0],
-                       wires[w_count].currentPath->bounds[1]);
-    if(wires[w_count].currentPath->numBends == 2){
-      fprintf(outputWire, "%d %d ", wires[w_count].currentPath->bends[0],
-                       wires[w_count].currentPath->bends[1]);
-      fprintf(outputWire, "%d %d ", wires[w_count].currentPath->bends[2],
-                       wires[w_count].currentPath->bends[3]);
-    }
-    if(wires[w_count].currentPath->numBends == 1){
-      fprintf(outputWire, "%d %d ", wires[w_count].currentPath->bends[0],
-                       wires[w_count].currentPath->bends[1]);
-    }
-    fprintf(outputWire, "%d %d\n", wires[w_count].currentPath->bounds[2],
-                       wires[w_count].currentPath->bounds[3]);
-  }
-  fclose(outputCost);
-  fclose(outputWire);
-
-  // free the allocated wire and DS
+  // free the alocated wire
   for(int i = 0; i < num_of_wires; i++){
     delete[] wires[i].currentPath;
     delete[] wires[i].prevPath;

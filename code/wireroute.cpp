@@ -260,18 +260,18 @@ int main(int argc, const char *argv[])
                   b = &B[(row + s_x)];
 
                   /*### UPDATING CELL: CRITICAL REGION ###*/
-                  omp_set_lock(&b->lock);
+                  omp_set_lock(b->lock);
                     b->val += 1;
-                  omp_unset_lock(&b->lock);
+                  omp_unset_lock(b->lock);
                   /*######################################*/
 
                   s_x += dir; // add/subtract a column
                 } // End point
                 b = &B[(row + e_x)];
                 /*### UPDATING CELL: CRITICAL REGION ###*/
-                omp_set_lock(&b->lock);
+                omp_set_lock(b->lock);
                   b->val += 1;
-                omp_unset_lock(&b->lock);
+                omp_unset_lock(b->lock);
                 /*######################################*/
               }
               // VERTICAL: only y changes along path
@@ -285,9 +285,9 @@ int main(int argc, const char *argv[])
                   b = &B[(row + s_x)];
 
                   /*### UPDATING CELL: CRITICAL REGION ###*/
-                  omp_set_lock(&b->lock);
+                  omp_set_lock(b->lock);
                     b->val += 1;
-                  omp_unset_lock(&b->lock);
+                  omp_unset_lock(b->lock);
                   /*######################################*/
 
                   s_y += dir;
@@ -295,9 +295,9 @@ int main(int argc, const char *argv[])
                 } // End point
                 b = &B[(row + e_x)];
                 /*### UPDATING CELL: CRITICAL REGION ###*/
-                omp_set_lock(&b->lock);
+                omp_set_lock(b->lock);
                   b->val += 1;
-                omp_unset_lock(&b->lock);
+                omp_unset_lock(b->lock);
                 /*######################################*/
               }
             case 1: break;
@@ -322,9 +322,57 @@ int main(int argc, const char *argv[])
   printf("Computation Time: %lf.\n", compute_time);
 
   /* Write wires and costs to files */
-  // Output current wire set
-  // Ouptut current cost set
+  FILE *outputWire, *outputCost;
+  char costFileName[128] = "costs_";
+  char wireFileName[128] = "output_";
+  strcat(costFileName, argv[0]);
+  strcat(wireFileName, argv[0]);
+  strcat(wireFileName, "_");
+  strcat(costFileName, "_");
+  char buf[5];
+  snprintf(buf, sizeof(buf), "%d", num_of_threads);
+  strcat(wireFileName, buf);
+  strcat(costFileName, buf);
+  strcat(wireFileName, ".txt");
+  strcat(costFileName, ".txt");
 
+  outputWire = fopen(wireFileName, "w");
+  outputCost = fopen(costFileName, "w");
+  if (outputCost == NULL || outputWire == NULL)
+  {
+    printf("Error opening file!\n");
+    exit(1);
+  }
+
+  fprintf(outputWire, "%d %d\n", dim_x, dim_y);
+  fprintf(outputCost, "%d %d\n", dim_x, dim_y);
+  /*wrting to Cost */
+  for(int row = 0 ; row < dim_y; row++){
+    for(int col = 0; col < dim_x; col++){
+      fprintf(outputCost, "%d ", costs->board[row*dim_y + col].val);
+    }
+    fprintf(outputCost, "\n");
+  }
+  /*wrting to wire */
+  fprintf(outputWire, "%d\n", num_of_wires);
+  for(int w_count = 0; w_count < num_of_wires; w_count++){
+    fprintf(outputWire, "%d %d ", wires[w_count].currentPath->bounds[0],
+                       wires[w_count].currentPath->bounds[1]);
+    if(wires[w_count].currentPath->numBends == 2){
+      fprintf(outputWire, "%d %d ", wires[w_count].currentPath->bends[0],
+                       wires[w_count].currentPath->bends[1]);
+      fprintf(outputWire, "%d %d ", wires[w_count].currentPath->bends[2],
+                       wires[w_count].currentPath->bends[3]);
+    }
+    if(wires[w_count].currentPath->numBends == 1){
+      fprintf(outputWire, "%d %d ", wires[w_count].currentPath->bends[0],
+                       wires[w_count].currentPath->bends[1]);
+    }
+    fprintf(outputWire, "%d %d\n", wires[w_count].currentPath->bounds[2],
+                       wires[w_count].currentPath->bounds[3]);
+  }
+  fclose(outputCost);
+  fclose(outputWire);
 
   // free the allocated wire and DS
   for( int y = 0; y < dim_y; y++){

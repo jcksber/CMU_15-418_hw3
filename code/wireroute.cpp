@@ -342,6 +342,24 @@ int main(int argc, const char *argv[])
               b1_y = bends[1];
               b2_x = bends[2];
               b2_y = bends[3]; 
+              while (num_bends != 0)
+              {
+                if (s_y == b1_y) // Before bend is horizontal
+                {
+                  horizontalCost(B, row, s_x, b1_x);
+                  verticalCost(B, row, b1_x, b2_x, b1_y, b2_y, dim_y);//after bend is vertical 
+                  if (b1_y == b2_y) // Before second bend is horizontal
+                  {
+
+                  }
+                }
+                else             // Before bend is vertical
+                {
+                  verticalCost(B, row, s_x, b1_x, s_y, b1_y, dim_y);
+                  row = b1_y * dim_y;
+                  horizontalCost(B, row, b1_x, b2_x);//after bend is horizontal 
+                }
+            }
           }
 
 

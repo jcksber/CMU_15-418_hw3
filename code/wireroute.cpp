@@ -10,8 +10,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <omp.h>
 #include "mic.h"
 
@@ -65,7 +63,7 @@ static void show_help(const char *program_path)
 void new_rand_path(wire_t *wire){
   //overwrite previous pathi
   int bend = 0;
-  std::memcpy(wire->prevPath, wire->currentPath, sizeof(wire_t));
+  memcpy(wire->prevPath, wire->currentPath, sizeof(wire_t));
   int s_x, s_y, e_x, e_y, dy, yp;
   s_x = wire->currentPath->bounds[0];
   s_y = wire->currentPath->bounds[1];

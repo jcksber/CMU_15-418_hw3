@@ -34,7 +34,7 @@ typedef struct
  */
 typedef struct
 {
-	omp_lock_t lock;
+	omp_lock_t* lock;
 	int val;
 } cost_cell_t;
 

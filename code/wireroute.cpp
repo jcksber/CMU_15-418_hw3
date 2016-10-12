@@ -156,7 +156,7 @@ int main(int argc, const char *argv[])
   for( int y = 0; y < dim_y; y++){
     for( int x = 0; x < dim_x; x++){
       costs->board[y*dim_y + x].val = 0;
-      omp_init_lock(&costs->board[y*dim_y + x].lock);
+      omp_init_lock(costs->board[y*dim_y + x].lock);
     }
   }
   fclose(input);
@@ -295,6 +295,12 @@ int main(int argc, const char *argv[])
   fclose(outputWire);
 
   // free the allocated wire and DS
+  for( int y = 0; y < dim_y; y++){
+    for( int x = 0; x < dim_x; x++){
+      omp_destroy_lock(costs->board[y*dim_y + x].lock);
+    }
+  }
+
   for(int i = 0; i < num_of_wires; i++){
     delete[] wires[i].currentPath;
     delete[] wires[i].prevPath;

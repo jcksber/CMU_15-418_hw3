@@ -72,9 +72,12 @@ void new_rand_path(wire_t *wire){
   e_x = wire->currentPath->bounds[2];
   e_y = wire->currentPath->bounds[3];
   dy = abs(e_y - s_y);
-  yp = s_y + ((rand() % dy) /1);
-  if(s_x != e_x) bend += 1;
-  if(e_y != yp) bend +=1;
+  if( s_y < e_y )  yp = s_y + ((rand() % dy) /1);
+  else yp = s_y - ((rand() % dy) /1);
+  if(s_x != e_x){
+    bend += 1;
+    if(e_y != yp) bend +=1;
+  }
   wire->currentPath->bends[0] = s_x;
   wire->currentPath->bends[1] = yp;
   wire->currentPath->bends[2] = e_x;
@@ -242,14 +245,14 @@ int main(int argc, const char *argv[])
 
   /* Write wires and costs to files */
   FILE *outputWire, *outputCost;
-  char *costFileName = "costs_";
-  char *wireFileName = "output_";
+  char costFileName[128] = "costs_";
+  char wireFileName[128] = "output_";
   strcat(costFileName, argv[0]);
   strcat(wireFileName, argv[0]);
   strcat(wireFileName, "_");
   strcat(costFileName, "_");
-  char *buf;
-  itoa(num_of_threads, buf, 10);
+  char buf[5];
+  snprintf(buf, sizeof(buf), "%d", num_of_threads);
   strcat(wireFileName, buf);
   strcat(costFileName, buf);
   strcat(wireFileName, ".txt");
@@ -275,20 +278,20 @@ int main(int argc, const char *argv[])
   /*wrting to wire */
   fprintf(outputWire, "%d\n", num_of_wires);
   for(int w_count = 0; w_count < num_of_wires; w_count++){
-    fprintf(outputWire, "%d %d ", wires[w_count]->currentPath->bounds[0],
-                       wires[w_count]->currentPath->bounds[1]);
-    if(wires[w_count]->currentPath->numBends == 2){
-      fprintf(outputWire, "%d %d ", wires[w_count]->currentPath->bends[0],
-                       wires[w_count]->currentPath->bends[1]);
-      fprintf(outputWire, "%d %d ", wires[w_count]->currentPath->bends[2],
-                       wires[w_count]->currentPath->bends[3]);
+    fprintf(outputWire, "%d %d ", wires[w_count].currentPath->bounds[0],
+                       wires[w_count].currentPath->bounds[1]);
+    if(wires[w_count].currentPath->numBends == 2){
+      fprintf(outputWire, "%d %d ", wires[w_count].currentPath->bends[0],
+                       wires[w_count].currentPath->bends[1]);
+      fprintf(outputWire, "%d %d ", wires[w_count].currentPath->bends[2],
+                       wires[w_count].currentPath->bends[3]);
     }
-    if(wires[w_count]->currentPath->numBends == 1){
-      fprintf(outputWire, "%d %d ", wires[w_count]->currentPath->bends[0],
-                       wires[w_count]->currentPath->bends[1]);
+    if(wires[w_count].currentPath->numBends == 1){
+      fprintf(outputWire, "%d %d ", wires[w_count].currentPath->bends[0],
+                       wires[w_count].currentPath->bends[1]);
     }
-    fprintf(outputWire, "%d %d\n", wires[w_count]->currentPath->bounds[2],
-                       wires[w_count]->currentPath->bounds[3]);
+    fprintf(outputWire, "%d %d\n", wires[w_count].currentPath->bounds[2],
+                       wires[w_count].currentPath->bounds[3]);
   }
   fclose(outputCost);
   fclose(outputWire);

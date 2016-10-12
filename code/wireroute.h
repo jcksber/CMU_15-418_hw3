@@ -19,8 +19,7 @@ typedef struct
 } path_t;
 
 /* wire_t *
- * Wire struct - define a single wire
- * Defined as two paths
+ * Wire struct - define a single wire as two path's
  */
 typedef struct
 {
@@ -30,8 +29,7 @@ typedef struct
 	path_t *prevPath;
 } wire_t;
 
-/* cost_t *
- * cost_cell_t definition
+/* cost_cell_t *
  * Just an integer, but with a lock for cost array writes per cell
  */
 typedef struct
@@ -40,8 +38,10 @@ typedef struct
 	int val;
 } cost_cell_t;
 
-//the struct defines the board
-// contains both the previous record and the current board
+/* cost_t *
+ * the struct defines the board;
+ * contains both the previous record and the current board
+ */
 typedef struct
 {
   int prev_max;
@@ -54,7 +54,6 @@ int get_option_int(const char *option_name, int default_value);
 float get_option_float(const char *option_name, float default_value);
 /* Our helper functions */
 
-//wire_t initWire();
 
 // overwrite the prev path with current path and randomly generate a new path
 void new_rand_path(wire_t *wire);

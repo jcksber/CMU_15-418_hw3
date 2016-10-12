@@ -59,15 +59,6 @@ static void show_help(const char *program_path)
 // HELPER FUNCTION
 ////////////////////////////////////
 
-/* initWire() *
- * Create a wire with a simple path
- */
-/*
-wire_t initWire()
-{
-}
-*/
-
 void new_rand_path(wire_t *wire){
   //overwrite previous pathi
   int bend = 0;
@@ -174,9 +165,6 @@ int main(int argc, const char *argv[])
 
   // Init Param
   omp_set_num_threads(num_of_threads);
-  // init wires
-
-  // init board
 
   auto compute_start = Clock::now();
   double compute_time = 0;
@@ -193,23 +181,57 @@ int main(int argc, const char *argv[])
     /* Implement the wire routing algorithm here
      * Feel free to structure the algorithm into different functions
      * Don't use global variables.
-     * Use OpenMP to parallelize the algorithm. */
+     * Use OpenMP to parallelize the algorithm. 
+     */
 
-     // ALGO
-     // 1. Calculate cost of current path, if not known. This is the current min path.
-     // 2. Consider all paths which first travel horizontally.
-     //    If any costs less than the current min path, that is the new min path.
-     // 3. Same as (2) using vertical paths.
-     // 4. With probability 1 - P, choose the current min path.  Otherwise, choose a
-     //    a path uniformly at random from the space of delt_x + delt_y possible routes.
+    // PRIVATE variables
+    int i;
+    // SHARED variables
+    cost_cell_t *B = costs->board;
 
-     // STEPS
-     // 1. Compute one possible path for each wire & save as prevPath -- PARALLEL
-     // 2. Initialize cost array with random wire paths -- parallel by wire
+    // ALGO
+    // 1. With probability 1 - P, choose the current min path.  Otherwise, choose a
+    //    a path uniformly at random from the space of delt_x + delt_y possible routes.
+    // 2. Calculate cost of current path, if not known. This is the current min path.
+    // 3. Consider all paths which first travel horizontally.
+    //    If any costs less than the current min path, that is the new min path.
+    // 4. Same as (2), using vertical paths.
 
-     // FUNCTIONS
-     // void init()
-     // path_t compute_paths()
+    // Idea for later ?? Split up work of updating cost array by cells versus by wires
+
+    /* INIT LOOP */
+    /* Parallel by wire, initialize all wire 'first' paths (create a start board) */
+    #pragma omp parallel for             \
+                         default(shared) \
+                         private(i)      \
+                         shared(wires)   \
+                         schedule(dynamic)
+      for (i = 0; i < num_of_threads; i++) // 1 iteration
+      {
+        new_rand_path( &(wires[i]) );
+      } /* implicit barrier */
+
+    /* MAIN LOOP */
+    for (i = 0; i < SA_iters; i++) // N iterations
+    {
+      /* Parallel by wire, update cost array */
+      #pragma omp parallel for              \
+                           default(shared)  \
+                           private(j)       \
+                           shared(wires, B) \
+                           schedule(dynamic)
+        for (j = 0; j < num_of_wires; j++) // 1 iteration
+        {
+
+        } /* implicit barrier */
+
+      /* Parallel by wire, calculate cost of current path */
+
+      /* Parallel by wire, determine NEW path */
+      // With probability 1 - P, choose the current min path.
+
+      // Otherwise, choose a path at random
+    }
   }
 
   compute_time += duration_cast<dsec>(Clock::now() - compute_start).count();

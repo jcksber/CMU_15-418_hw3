@@ -44,8 +44,8 @@ typedef struct
  */
 typedef struct
 {
-  int prev_max;
-  int prev_aggr_total;
+  int prevMax;
+  int prevAggrTotal;
   cost_cell_t* board;
 } cost_t;
 

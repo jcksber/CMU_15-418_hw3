@@ -155,7 +155,7 @@ int main(int argc, const char *argv[])
   for( int y = 0; y < dim_y; y++){
     for( int x = 0; x < dim_x; x++){
       costs->board[y*dim_y + x].val = 0;
-      omp_init_lock(&costs->board[y*dim_y + x].lock);
+      omp_init_lock(costs->board[y*dim_y + x].lock);
     }
   }
 
@@ -208,13 +208,13 @@ int main(int argc, const char *argv[])
       {
         new_rand_path( &(wires[i]) );
       } /* implicit barrier */
-    /* ############## END PRAGMA ############# */    
+    /* ############## END PRAGMA ############# */
     /* MAIN LOOP */
     for (i = 0; i < SA_iters; i++) // N iterations
     {
       /* Private wire variables */
-          path_t *mypath;         
-          cost_cell_t *b;           
+          path_t *mypath;
+          cost_cell_t *b;
           int *bends, *bounds;
           int num_bends, s_x, s_y, e_x, e_y, dir, row;
       /* Parallel by wire, update cost array */
@@ -226,9 +226,9 @@ int main(int argc, const char *argv[])
         for (j = 0; j < num_of_wires; j++) // 1 iteration
         {
           // Initialize wire private variables
-          mypath    = wires[j].currentPath; 
+          mypath    = wires[j].currentPath;
           num_bends = mypath->numBends;
-          bends     = mypath->bends;   
+          bends     = mypath->bends;
           bounds    = mypath->bounds;
           s_x = bounds[0];            //(start point)
           s_y = bounds[1];
@@ -236,56 +236,56 @@ int main(int argc, const char *argv[])
           e_y = bounds[3];
 
           // Determine bend coordinates (if they exist)
-          if (num_bends > 0) { 
+          if (num_bends > 0) {
             // int first_bend_x = bends[0]; // bend 1
             // int first_bend_y = bends[1];
             if (num_bends != 1) {
               // int sec_bend_x = bends[2]; // bend 2
               // int sec_bend_y = bends[3];    // PRIVATE???????
             }
-          } 
-          // Follow path & update cost array 
+          }
+          // Follow path & update cost array
           switch (num_bends) {
             case 0:
-              row = s_y * dim_y; 
+              row = s_y * dim_y;
 
               // HORIZONTAL: only x changes along path
-              if (s_y == e_y) 
+              if (s_y == e_y)
               {
                 // Determine path direction
-                dir = s_x > e_x ? -1 : 1; 
+                dir = s_x > e_x ? -1 : 1;
                 /* Update cost array for given wire */
                 while (s_x != e_x)
                 { // Start point & points in-between
-                  b = &B[(row + s_x)]; 
+                  b = &B[(row + s_x)];
 
                   /*### UPDATING CELL: CRITICAL REGION ###*/
-                  omp_set_lock(&b->lock);     
+                  omp_set_lock(&b->lock);
                     b->val += 1;
                   omp_unset_lock(&b->lock);
-                  /*######################################*/ 
+                  /*######################################*/
 
                   s_x += dir; // add/subtract a column
                 } // End point
                 b = &B[(row + e_x)];
                 /*### UPDATING CELL: CRITICAL REGION ###*/
-                omp_set_lock(&b->lock);     
+                omp_set_lock(&b->lock);
                   b->val += 1;
                 omp_unset_lock(&b->lock);
                 /*######################################*/
               }
               // VERTICAL: only y changes along path
-              else 
-              { 
+              else
+              {
                 // Determine path direction
-                dir = s_y > e_y ? -1 : 1; 
+                dir = s_y > e_y ? -1 : 1;
                 /* Update cost array for given wire */
                 while (s_y != e_y)
                 { // Start point & points in-between
                   b = &B[(row + s_x)];
 
                   /*### UPDATING CELL: CRITICAL REGION ###*/
-                  omp_set_lock(&b->lock);     
+                  omp_set_lock(&b->lock);
                     b->val += 1;
                   omp_unset_lock(&b->lock);
                   /*######################################*/
@@ -295,7 +295,7 @@ int main(int argc, const char *argv[])
                 } // End point
                 b = &B[(row + e_x)];
                 /*### UPDATING CELL: CRITICAL REGION ###*/
-                omp_set_lock(&b->lock);     
+                omp_set_lock(&b->lock);
                   b->val += 1;
                 omp_unset_lock(&b->lock);
                 /*######################################*/
@@ -306,7 +306,7 @@ int main(int argc, const char *argv[])
 
 
         } /* implicit barrier */
-      /* ############## END PRAGMA ############# */  
+      /* ############## END PRAGMA ############# */
 
       /* Parallel by wire, calculate cost of current path */
 
@@ -316,7 +316,7 @@ int main(int argc, const char *argv[])
       // Otherwise, choose a path at random
     }
   }
-  /* #################### END PRAGMA ################### */    
+  /* #################### END PRAGMA ################### */
 
   compute_time += duration_cast<dsec>(Clock::now() - compute_start).count();
   printf("Computation Time: %lf.\n", compute_time);
@@ -326,7 +326,12 @@ int main(int argc, const char *argv[])
   // Ouptut current cost set
 
 
-  // free the alocated wire
+  // free the allocated wire and DS
+  for( int y = 0; y < dim_y; y++){
+    for( int x = 0; x < dim_x; x++){
+      omp_destroy_lock(costs->board[y*dim_y + x].lock);
+    }
+  }
   for(int i = 0; i < num_of_wires; i++){
     delete[] wires[i].currentPath;
     delete[] wires[i].prevPath;

@@ -49,13 +49,14 @@ typedef struct
   cost_cell_t* board;
 } cost_t;
 
+/* Command line helper functions */
 const char *get_option_string(const char *option_name, const char *default_value);
 int get_option_int(const char *option_name, int default_value);
 float get_option_float(const char *option_name, float default_value);
+
 /* Our helper functions */
-
-
-// overwrite the prev path with current path and randomly generate a new path
+void horizontalCost(cost_cell_t *C, int row, int startX, int endX);
+void verticalCost(cost_cell_t *C, int row, int startX, int endX, int startY, int endY, int dimY);
 void new_rand_path(wire_t *wire);
 
 #endif

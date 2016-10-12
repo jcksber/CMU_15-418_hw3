@@ -197,7 +197,7 @@ int main(int argc, const char *argv[])
     //                   Structure to store "no touch points" (i.e. pt's with higher costs)??
     //                   Sort path points before updating cost array --> LOCALITY
 
-    /* INIT LOOP */
+    /*@@@@@@@@@@@@@@ INIT LOOP @@@@@@@@@@@@@@*/
     /* Parallel by wire, initialize all wire 'first' paths (create a start board) */
     #pragma omp parallel for             \
                          default(shared) \
@@ -209,6 +209,7 @@ int main(int argc, const char *argv[])
         new_rand_path( &(wires[i]) );
       } /* implicit barrier */
     /* ############## END PRAGMA ############# */
+    /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/
     /* MAIN LOOP */
     for (i = 0; i < SA_iters; i++) // N iterations
     {

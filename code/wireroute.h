@@ -56,6 +56,7 @@ float get_option_float(const char *option_name, float default_value);
 
 //wire_t initWire();
 
+// overwrite the prev path with current path and randomly generate a new path
 void new_rand_path(wire_t *wire);
 
 #endif

@@ -70,13 +70,22 @@ wire_t initWire()
 
 void new_rand_path(wire_t *wire){
   //overwrite previous pathi
+  int bend = 0;
   std::memcpy(wire->prevPath, wire->currentPath, sizeof(wire_t));
-  int s_x, s_y, e_x, e_y, dx, dy;
+  int s_x, s_y, e_x, e_y, dy, yp;
   s_x = wire->currentPath->bounds[0];
   s_y = wire->currentPath->bounds[1];
   e_x = wire->currentPath->bounds[2];
   e_y = wire->currentPath->bounds[3];
-  dx
+  dy = abs(e_y - s_y);
+  yp = s_y + ((rand() % dy) /1);
+  if(s_x != e_x) bend += 1;
+  if(e_y != yp) bend +=1;
+  wire->currentPath->bends[0] = s_x;
+  wire->currentPath->bends[1] = yp;
+  wire->currentPath->bends[2] = e_x;
+  wire->currentPath->bends[3] = yp;
+  wire->currentPath->numBends = bend;
 }
 
 /////////////////////////////////////////

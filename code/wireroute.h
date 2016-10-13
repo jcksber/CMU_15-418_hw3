@@ -56,7 +56,7 @@ float get_option_float(const char *option_name, float default_value);
 
 /* Our helper functions */
 void horizontalCost(cost_cell_t *C, int row, int startX, int endX);
-void verticalCost(cost_cell_t *C, int row, int startX, int endX, int startY, int endY, int dimY);
+void verticalCost(cost_cell_t *C, int row, int xCoord, int startY, int endY, int dimY);
 void new_rand_path(wire_t *wire);
 
 #endif

@@ -122,7 +122,7 @@ void horizontalCost(cost_cell_t *C, int row, int startX, int endX)
 /* verticalCost *
  * Update cost array for vertical traversal
  */
-void verticalCost(cost_cell_t *C, int row, int startX, int endX, int startY, int endY, int dimY)
+void verticalCost(cost_cell_t *C, int row, int xCoord, int startY, int endY, int dimY)
 {
   cost_cell_t *c;
   // Determine path direction
@@ -131,7 +131,7 @@ void verticalCost(cost_cell_t *C, int row, int startX, int endX, int startY, int
   /* Update cost array for given wire */
   while (startY != endY)
   { 
-    c = &C[(row + startX)];
+    c = &C[(row + xCoord)];
 
     /*### UPDATING CELL: CRITICAL REGION ###*/
     omp_set_lock(c->lock);
@@ -143,7 +143,7 @@ void verticalCost(cost_cell_t *C, int row, int startX, int endX, int startY, int
     row = startY * dimY; // add/subtract a row
   } 
 
-  c = &C[(row + endX)];
+  c = &C[(row + xCoord)];
   /*### UPDATING CELL: CRITICAL REGION ###*/
   omp_set_lock(c->lock);
     c->val += 1;
@@ -308,9 +308,9 @@ int main(int argc, const char *argv[])
           num_bends = mypath->numBends;
           bends     = mypath->bends;
           bounds    = mypath->bounds;
-          s_x = bounds[0];   //(start point)
+          s_x = bounds[0];   // (start point)
           s_y = bounds[1];
-          e_x = bounds[2];   //(end point)
+          e_x = bounds[2];   // (end point)
           e_y = bounds[3];
           row = s_y * dim_y; // row to start for every case
 
@@ -337,7 +337,7 @@ int main(int argc, const char *argv[])
                 row = b1_y * dim_y;
                 horizontalCost(B, row, b1_x, e_x);
               }
-            case 2:
+            case 2: // NEED TO CHANGE THE STRUCTURE.. CURRENTLY REDUNDANT
               b1_x = bends[0]; // Get both bend coordinates
               b1_y = bends[1];
               b2_x = bends[2];
@@ -347,19 +347,21 @@ int main(int argc, const char *argv[])
                 if (s_y == b1_y) // Before bend is horizontal
                 {
                   horizontalCost(B, row, s_x, b1_x);
-                  verticalCost(B, row, b1_x, b2_x, b1_y, b2_y, dim_y);//after bend is vertical 
-                  if (b1_y == b2_y) // Before second bend is horizontal
-                  {
-
-                  }
+                  verticalCost(B, row, b1_x, b1_y, b2_y, dim_y);//after bend is vertical 
                 }
                 else             // Before bend is vertical
                 {
-                  verticalCost(B, row, s_x, b1_x, s_y, b1_y, dim_y);
+                  verticalCost(B, row, s_x, s_y, b1_y, dim_y);
                   row = b1_y * dim_y;
                   horizontalCost(B, row, b1_x, b2_x);//after bend is horizontal 
                 }
-            }
+                //Update for next iteration
+                row = b2_y * dim_y;
+                s_x = b1_x; s_y = b1_y;
+                b1_x = b2_x; b1_y = b2_y;
+                b2_x = e_x; b2_y = e_y;
+                num_bends--;
+              }
           }
 
 

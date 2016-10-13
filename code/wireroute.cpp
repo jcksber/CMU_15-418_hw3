@@ -337,7 +337,7 @@ int main(int argc, const char *argv[])
                 row = b1_y * dim_y;
                 horizontalCost(B, row, b1_x, e_x);
               }
-            case 2: // NEED TO CHANGE THE STRUCTURE.. CURRENTLY REDUNDANT
+            case 2: 
               b1_x = bends[0]; // Get both bend coordinates
               b1_y = bends[1];
               b2_x = bends[2];

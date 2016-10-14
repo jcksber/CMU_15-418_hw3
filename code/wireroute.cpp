@@ -188,7 +188,14 @@ value_t readVertical(cost_t* board, int x, int s_y, int e_y){
   value_t result;
   result.aggr_max = 0;
   result.m = 0;
-
+  int dir = s_y > e_y ? -1:1;
+  int c = s_y;
+  while(c != e_y){
+    int val = readBoard(board,x,c);
+    if(result.m < val) result.m = val;
+    if(val > 1) result.aggr_max += val;
+    c += dir;
+  }
   return result;
 }
 
@@ -196,7 +203,14 @@ value_t readHorizontal(cost_t* board, int y, int s_x, int e_x){
   value_t result;
   result.aggr_max = 0;
   result.m = 0;
-
+  int dir = s_x > e_x ? -1:1;
+  int c = s_x;
+  while(c != e_x){
+    int val = readBoard(board,c,y);
+    if(result.m < val) result.m = val;
+    if(val > 1) result.aggr_max += val;
+    c += dir;
+  }
   return result;
 }
 

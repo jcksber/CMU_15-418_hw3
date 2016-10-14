@@ -63,6 +63,6 @@ void horizontalCost(cost_cell_t *C, int row, int startX, int endX, int dimY);
 void verticalCost(cost_cell_t *C, int xCoord, int startY, int endY, int dimY);
 void new_rand_path(wire_t *wire);
 void incrCell(cost_cell_t *C, int x, int y, int dimY);
-//void updateBoard(cost_t* board);
+void updateBoard(cost_t* board);
 
 #endif

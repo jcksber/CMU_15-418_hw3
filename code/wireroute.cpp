@@ -160,7 +160,7 @@ void incrCell(cost_cell_t *C, int x, int y, int dimY){
   omp_unset_lock(&c->lock);
 }
 
-/*
+/* use to run board statistic  */
 void updateBoard(cost_t *board){
   // overwrite the previous data
   board->prevMax = board->currentMax;
@@ -170,15 +170,15 @@ void updateBoard(cost_t *board){
   // traversal to count the board
   for (int row = 0; row < board->dimY; row++){
     for (int col = 0;  col < board->dimX; col++){
-
-
-
+      int val = board->board[row* board->dimY + col].val;
+      if(val > Max) Max = val;
+      if(val > 1) Total += val;
     }
   }
   board->currentMax = Max;
-  board->currentTotal = Total;
+  board->currentAggrTotal = Total;
 }
-*/
+
 //////////////////////////////////////
 
 ///////////////////////////////////////////////////////////
@@ -388,7 +388,6 @@ int main(int argc, const char *argv[])
             }
         }
       } /* implicit barrier */
-      printf("Finish board layout\n");
 
       /* Parallel by wire, calculate cost of current path */
       /* Parallel by wire, determine NEW path */
@@ -398,7 +397,6 @@ int main(int argc, const char *argv[])
       for (w = 0; w < num_of_wires; w++){
         new_rand_path( &(wires[w]) );
       } /* implicit barrier */
-      printf("Generated new set of wires\n");
     } /*  end iterations*/
      // clean up board
     #pragma omp parallel for default(shared) \
@@ -475,14 +473,14 @@ int main(int argc, const char *argv[])
           }
       }
     } /* implicit barrier */
-    printf("Finish board layout\n");
-
   }
   /* #################### END PRAGMA ################### */
 
   compute_time += duration_cast<dsec>(Clock::now() - compute_start).count();
   printf("Computation Time: %lf.\n", compute_time);
-
+  // update board statistic ////////////////
+  updateBoard(costs);
+  /////////////////////////////
   /* Write wires and costs to files */
   char cwd[1024];
   if (getcwd(cwd, sizeof(cwd)) != NULL)
@@ -515,7 +513,9 @@ int main(int argc, const char *argv[])
   strcat(costFileName, buf);
   strcat(wireFileName, ".txt");
   strcat(costFileName, ".txt");
-
+  // print stat
+  printf("Input File: %s has total aggregated cost: [%d] and max layers: [%d]\n", cwd,
+              costs->currentAggrTotal, costs->currentMax);
   outputWire = fopen(wireFileName, "w");
   outputCost = fopen(costFileName, "w");
   if (outputCost == NULL || outputWire == NULL)

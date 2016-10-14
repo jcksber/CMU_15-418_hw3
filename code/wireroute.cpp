@@ -62,6 +62,8 @@ static void show_help(const char *program_path)
 
 /* new_rand_path *
  * Generate a random path in the space of delta_x + delta_y
+ * 50% change pick x traversal  50% chance pick y traversal
+ * random generate bends
  */
 void new_rand_path(wire_t *wire){
   //overwrite previous path
@@ -116,6 +118,7 @@ void new_rand_path(wire_t *wire){
 
 /* horizontalCost *
  * Update cost array for horizontal traversal
+ * Input: ptr to board, y coord, starting x, ending x, dim_y
  */
 void horizontalCost(cost_cell_t *C, int row, int startX, int endX, int dimY){
   int s_x = startX;
@@ -132,6 +135,7 @@ void horizontalCost(cost_cell_t *C, int row, int startX, int endX, int dimY){
 
 /* verticalCost *
  * Update cost array for vertical traversal
+ * Input: ptr to board, x coord, starting y, ending y, dim_y
  */
 void verticalCost(cost_cell_t *C, int xCoord, int startY, int endY, int dimY){
   int s_y = startY;
@@ -146,9 +150,11 @@ void verticalCost(cost_cell_t *C, int xCoord, int startY, int endY, int dimY){
   }
 }
 
+// Use cell level lock to safely incre value by 1
+// INPUT: ptr to board, x coord , y coord, dim_y
 void incrCell(cost_cell_t *C, int x, int y, int dimY){
   cost_cell_t *c;
-  c = &C[y*dimY + x];
+  c = &C[y*dimY + x]; // calculate the idx in board
   omp_set_lock(&c->lock);
     c->val +=1;
   omp_unset_lock(&c->lock);
@@ -251,7 +257,7 @@ int main(int argc, const char *argv[])
   costs->board = (cost_cell_t *)calloc(dim_x * dim_y, sizeof(cost_cell_t));
   printf("Complete allocate board\n");
 
-  /* Initialize cost array */
+  /* Initialize cell level locks */
   for( int y = 0; y < dim_y; y++){
     for( int x = 0; x < dim_x; x++){
       omp_init_lock(&(costs->board[y*dim_y + x].lock));
@@ -293,8 +299,6 @@ int main(int argc, const char *argv[])
     // PRIVATE variables
     int i, j, x, y, w;
     path_t *mypath;
-    int *bends, *bounds;
-    int num_bends;
     int s_x, s_y, e_x, e_y;
     int b1_x, b1_y, b2_x, b2_y;
     // SHARED variables
@@ -302,41 +306,34 @@ int main(int argc, const char *argv[])
     /* ########## PARALLEL BY WIRE ##########*/
     /* Initialize all 'first' paths (create a start board) */
     #pragma omp parallel for default(shared)                       \
-                         private(i) shared(wires) schedule(dynamic)
+      private(i) shared(wires) schedule(dynamic)
     for (w = 0; w < num_of_wires; w++){
       new_rand_path( &(wires[w]) );
     } /* implicit barrier */
-    printf("Generated initial set of wires\n");
-
 
     /*@@@@@@@@@@@@@@ MAIN LOOP @@@@@@@@@@@@@@*/
-    for (i = 0; i < SA_iters; i++) // N iterations
-    {
+    for (i = 0; i < SA_iters; i++){
       /* ######### PARALLEL BY WIRE #########*/
-      // clean up board
       #pragma omp parallel for default(shared) \
         private(y, x) shared(B) schedule(dynamic)
       for( y = 0; y < dim_y; y++){
         for( x = 0; x < dim_x; x++){
-          B[y*dim_y + x].val = 0;
+          B[y*dim_y + x].val = 0;  // clean up board
         }
       }
       /*  layout board */
       #pragma omp parallel for default(shared)                            \
-        private(b1_x, b2_x, b1_y, b2_y,j,mypath,num_bends,s_x,s_y,e_x,e_y,bends,bounds)\
+        private(b1_x, b2_x, b1_y, b2_y,j,mypath,s_x,s_y,e_x,e_y)\
           shared(wires, B) schedule(dynamic)
       for (j = 0; j < num_of_wires; j++){
         // Initialize wire private variables
         mypath    = wires[j].currentPath;
-        num_bends = mypath->numBends;
-        bends     = mypath->bends;
-        bounds    = mypath->bounds;
-        s_x = bounds[0];   // (start point)
-        s_y = bounds[1];
-        e_x = bounds[2];   // (end point)
-        e_y = bounds[3];
+        s_x = mypath->bounds[0];   // (start point)
+        s_y = mypath->bounds[1];
+        e_x = mypath->bounds[2];   // (end point)
+        e_y = mypath->bounds[3];
         // Follow path & update cost array
-        switch (num_bends) {
+        switch (mypath->numBends) {
           case 0:
             if (s_y == e_y){ // Horizontal path
               horizontalCost(B, s_y, s_x, e_x, dim_y);
@@ -349,8 +346,8 @@ int main(int argc, const char *argv[])
               break;
             }
           case 1:
-            b1_x = bends[0];
-            b1_y = bends[1]; // Get bend coordinate
+            b1_x = mypath->bends[0];
+            b1_y = mypath->bends[1]; // Get bend coordinate
             if (s_y == b1_y) // Before bend is horizontal
             {
               horizontalCost(B, s_y, s_x, b1_x, dim_y);
@@ -368,10 +365,10 @@ int main(int argc, const char *argv[])
               break;
             }
           case 2:
-            b1_x = bends[0]; // Get both bend coordinates
-            b1_y = bends[1];
-            b2_x = bends[2];
-            b2_y = bends[3];
+            b1_x = mypath->bends[0]; // Get both bend coordinates
+            b1_y = mypath->bends[1];
+            b2_x = mypath->bends[2];
+            b2_y = mypath->bends[3];
             // Exam first bend
             if (s_y == b1_y) // Before bend is horizontal
             {
@@ -402,8 +399,6 @@ int main(int argc, const char *argv[])
         new_rand_path( &(wires[w]) );
       } /* implicit barrier */
       printf("Generated new set of wires\n");
-
-      // Otherwise, choose a path at random
     } /*  end iterations*/
      // clean up board
     #pragma omp parallel for default(shared) \
@@ -415,20 +410,17 @@ int main(int argc, const char *argv[])
     }
     /*  layout board */
     #pragma omp parallel for default(shared)                            \
-      private(j,mypath,num_bends,s_x,s_y,e_x,e_y,bends,bounds,b1_x, b2_x, b1_y, b2_y)\
+      private(j,mypath,s_x,s_y,e_x,e_y,b1_x, b2_x, b1_y, b2_y)\
         shared(wires, B) schedule(dynamic)
     for (j = 0; j < num_of_wires; j++){
       // Initialize wire private variables
       mypath    = wires[j].currentPath;
-      num_bends = mypath->numBends;
-      bends     = mypath->bends;
-      bounds    = mypath->bounds;
-      s_x = bounds[0];   // (start point)
-      s_y = bounds[1];
-      e_x = bounds[2];   // (end point)
-      e_y = bounds[3];
+      s_x = mypath->bounds[0];   // (start point)
+      s_y = mypath->bounds[1];
+      e_x = mypath->bounds[2];   // (end point)
+      e_y = mypath->bounds[3];
       // Follow path & update cost array
-      switch (num_bends) {
+      switch (mypath->numBends) {
         case 0:
           if (s_y == e_y){ // Horizontal path
             horizontalCost(B, s_y, s_x, e_x, dim_y);
@@ -441,8 +433,8 @@ int main(int argc, const char *argv[])
             break;
           }
         case 1:
-          b1_x = bends[0];
-          b1_y = bends[1]; // Get bend coordinate
+          b1_x = mypath->bends[0];
+          b1_y = mypath->bends[1]; // Get bend coordinate
           if (s_y == b1_y) // Before bend is horizontal
           {
             horizontalCost(B, s_y, s_x, b1_x, dim_y);
@@ -460,10 +452,10 @@ int main(int argc, const char *argv[])
             break;
           }
         case 2:
-          b1_x = bends[0]; // Get both bend coordinates
-          b1_y = bends[1];
-          b2_x = bends[2];
-          b2_y = bends[3];
+          b1_x = mypath->bends[0]; // Get both bend coordinates
+          b1_y = mypath->bends[1];
+          b2_x = mypath->bends[2];
+          b2_y = mypath->bends[3];
           // Exam first bend
           if (s_y == b1_y) // Before bend is horizontal
           {

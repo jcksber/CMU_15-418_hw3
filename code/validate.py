@@ -50,9 +50,9 @@ def validate(args):
     dim = lines[0].split()
     m, n = int(dim[0]), int(dim[1])
     wires = int(lines[1])
-    LOG.info('rows({}), cols({}), wires({})'.format(m, n, wires))
+    # LOG.info('rows({}), cols({}), wires({})'.format(m, n, wires))
     if len(lines) != wires + 2:
-        LOG.error('Route : Expected # of wires {}, Actual # of wires {}'.
+        LOG.error('Route : Expected # of wires %d, Actual # of wires %d'.
                   format(wires, len(lines) - 2))
         return False
     cost_array = [[0] * n for _ in range(m)]
@@ -60,7 +60,7 @@ def validate(args):
         wire = lines[i]
         path = map(int, wire.split())
         if len(path) % 2 != 0:
-            LOG.error('Route: end points doesn\'t come in pairs in line {}'.
+            LOG.error('Route: end points doesn\'t come in pairs in line %d'.
                       format(i + 2))
             return False
         points = [(path[2 * i], path[2 * i + 1]) for i in range(len(path) / 2)]
@@ -90,7 +90,7 @@ def validate(args):
         # check value
         for j in range(len(line)):
             if cost_array[i - 1][j] != line[j]:
-                LOG.error('Cost Array: Value mismatch at ({}, {})'.format(
+                LOG.error('Cost Array: Value mismatch at (%d, %d)'.format(
                     i - 1, j))
                 return False
     return True

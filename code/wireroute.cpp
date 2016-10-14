@@ -65,6 +65,7 @@ static void show_help(const char *program_path)
  */
 void new_rand_path(wire_t *wire){
   //overwrite previous path
+  srand(time(NULL));
   int bend = 0;
   std::memcpy(wire->prevPath, wire->currentPath, sizeof(wire_t));
   int s_x, s_y, e_x, e_y, dy, yp, dx, xp;
@@ -72,20 +73,23 @@ void new_rand_path(wire_t *wire){
   s_y = wire->currentPath->bounds[1];
   e_x = wire->currentPath->bounds[2];
   e_y = wire->currentPath->bounds[3];
+  if (s_x == e_x || s_y == e_y){
+    wire->currentPath->numBends = bend;
+    return;
+  }
+  // not in the same line, need at least one bend
+  bend +=1;
   dy = abs(e_y - s_y);
   dx = abs(e_x - s_x);
   // calculate random point on y axis
-  int ran_y = ((rand() % dy) /1);
-  int ran_x = ((rand() % dx) /1);
-  if ( (rand() % 2) /1){
+  if ((rand() % 10)> 5){
     // y first
+    int ran_y = rand() % dy;
+    if (ran_y == 0) ran_y = 1; // need to make progress
     if(s_y > e_y)  yp = s_y - ran_y;
     else yp = s_y + ran_y;
     // determind bends
-    if(s_x != e_x){
-      bend +=1;
-      if(e_y != yp && s_y != yp) bend +=1;
-    }
+    if(e_y != yp) bend +=1;
     // overwrite
     wire->currentPath->bends[0] = s_x;
     wire->currentPath->bends[1] = yp;
@@ -95,13 +99,12 @@ void new_rand_path(wire_t *wire){
   }
   else{
     // x first traversal
+    int ran_x = rand() % dx;
+    if (ran_x == 0) ran_x = 1;
     if(s_x > e_x)  xp = s_x - ran_x;
     else xp = s_x + ran_x;
     // determind bends
-    if(s_y != e_y){
-      bend += 1;
-      if(e_x != xp && s_x != xp) bend +=1;
-    }
+    if(e_x != xp) bend +=1;
     // overwrite
     wire->currentPath->bends[0] = xp;
     wire->currentPath->bends[1] = s_y;
@@ -321,6 +324,7 @@ int main(int argc, const char *argv[])
     for (i = 0; i < num_of_wires; i++){
       new_rand_path( &(wires[i]) );
     } /* implicit barrier */
+    printf("Generated initial set of wires\n");
 
 
     /*@@@@@@@@@@@@@@ MAIN LOOP @@@@@@@@@@@@@@*/
@@ -398,6 +402,7 @@ int main(int argc, const char *argv[])
             }
         }
       } /* implicit barrier */
+      printf("Finish board layout\n");
 
       /* Parallel by wire, calculate cost of current path */
       /* Parallel by wire, determine NEW path */
@@ -407,6 +412,7 @@ int main(int argc, const char *argv[])
       for (i = 0; i < num_of_wires; i++){
         new_rand_path( &(wires[i]) );
       } /* implicit barrier */
+      printf("Generated new set of wires\n");
 
       // Otherwise, choose a path at random
     } /*  end iterations*/
@@ -481,6 +487,7 @@ int main(int argc, const char *argv[])
           }
       }
     } /* implicit barrier */
+    printf("Finish final board layout\n");
   }
   /* #################### END PRAGMA ################### */
 

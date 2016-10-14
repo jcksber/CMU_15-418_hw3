@@ -398,6 +398,8 @@ int main(int argc, const char *argv[])
         new_rand_path( &(wires[w]) );
       } /* implicit barrier */
     } /*  end iterations*/
+
+    ////////////////////////////////////////////////////////////////////////////
      // clean up board
     #pragma omp parallel for default(shared) \
       private(y, x) shared(B) schedule(dynamic)
@@ -406,7 +408,7 @@ int main(int argc, const char *argv[])
         B[y*dim_y + x].val = 0;
       }
     }
-    /*  layout board */
+    /*  layout final result board  */
     #pragma omp parallel for default(shared)                            \
       private(j,mypath,s_x,s_y,e_x,e_y,b1_x, b2_x, b1_y, b2_y)\
         shared(wires, B) schedule(dynamic)
@@ -473,6 +475,7 @@ int main(int argc, const char *argv[])
           }
       }
     } /* implicit barrier */
+    ///////////////////////////////////////////////////////
   }
   /* #################### END PRAGMA ################### */
 

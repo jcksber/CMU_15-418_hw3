@@ -5,6 +5,7 @@
 
 #include "wireroute.h"
 #include <chrono>
+#include <unistd.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -66,25 +67,48 @@ void new_rand_path(wire_t *wire){
   //overwrite previous path
   int bend = 0;
   std::memcpy(wire->prevPath, wire->currentPath, sizeof(wire_t));
-  int s_x, s_y, e_x, e_y, dy, yp;
+  int s_x, s_y, e_x, e_y, dy, yp, dx, xp;
   s_x = wire->currentPath->bounds[0];
   s_y = wire->currentPath->bounds[1];
   e_x = wire->currentPath->bounds[2];
   e_y = wire->currentPath->bounds[3];
   dy = abs(e_y - s_y);
+  dx = abs(e_x - s_x);
   // calculate random point on y axis
-  int ran = ((rand() % dy) /1);
-  if( s_y > e_y)  yp = s_y - ran;
-  else yp = s_y + ran;
-  // determind bends
-  if(s_x != e_x) bend += 1;
-  if(e_y != yp) bend +=1;
-  // overwrite
-  wire->currentPath->bends[0] = s_x;
-  wire->currentPath->bends[1] = yp;
-  wire->currentPath->bends[2] = e_x;
-  wire->currentPath->bends[3] = yp;
-  wire->currentPath->numBends = bend;
+  int ran_y = ((rand() % dy) /1);
+  int ran_x = ((rand() % dx) /1);
+  if ( (rand() % 2) /1){
+    // y first
+    if(s_y > e_y)  yp = s_y - ran_y;
+    else yp = s_y + ran_y;
+    // determind bends
+    if(s_x != e_x){
+      bend +=1;
+      if(e_y != yp && s_y != yp) bend +=1;
+    }
+    // overwrite
+    wire->currentPath->bends[0] = s_x;
+    wire->currentPath->bends[1] = yp;
+    wire->currentPath->bends[2] = e_x;
+    wire->currentPath->bends[3] = yp;
+    wire->currentPath->numBends = bend;
+  }
+  else{
+    // x first traversal
+    if(s_x > e_x)  xp = s_x - ran_x;
+    else xp = s_x + ran_x;
+    // determind bends
+    if(s_y != e_y){
+      bend += 1;
+      if(e_x != xp && s_x != xp) bend +=1;
+    }
+    // overwrite
+    wire->currentPath->bends[0] = xp;
+    wire->currentPath->bends[1] = s_y;
+    wire->currentPath->bends[2] = xp;
+    wire->currentPath->bends[3] = e_y;
+    wire->currentPath->numBends = bend;
+  }
 }
 
 /* horizontalCost *
@@ -100,9 +124,9 @@ void horizontalCost(cost_cell_t *C, int row, int startX, int endX)
   while (s_x != endX){
     c = &C[row + s_x];
     /*### UPDATING CELL: CRITICAL REGION ###*/
-    omp_set_lock(c->lock);
+    omp_set_lock(&c->lock);
       c->val += 1;
-    omp_unset_lock(c->lock);
+    omp_unset_lock(&c->lock);
     /*######################################*/
     s_x += dir; // add/subtract a column
   }
@@ -121,11 +145,27 @@ void verticalCost(cost_cell_t *C, int xCoord, int startY, int endY, int dimY)
   while (s_y != endY){
     c = &C[s_y*dimY + xCoord];
     /*### UPDATING CELL: CRITICAL REGION ###*/
-    omp_set_lock(c->lock);
+    omp_set_lock(&c->lock);
       c->val += 1;
-    omp_unset_lock(c->lock);
+    omp_unset_lock(&c->lock);
     /*######################################*/
     s_y += dir;
+  }
+}
+
+void incrCell(cost_cell_t *C, int x, int y, int dimY){
+  cost_cell_t *c;
+  c = &C[y*dimY + x];
+  omp_set_lock(&c->lock);
+    c->val +=1;
+  omp_unset_lock(&c->lock);
+}
+
+void clearBoard(cost_cell_t *b, int dim_x, int dim_y){
+  for( int y = 0; y < dim_y; y++){
+    for( int x = 0; x < dim_x; x++){
+      b[y*dim_y + x].val = 0;
+    }
   }
 }
 
@@ -217,22 +257,22 @@ int main(int argc, const char *argv[])
     wires[count].currentPath->bounds[3] = e_y;
     count++;
   }
+  printf("Complete read wires: %d\n", count);
   /* Allocate for cost array struct */
   cost_t *costs = (cost_t *)calloc(1, sizeof(cost_t));
   costs->dimX = dim_x;
   costs->dimY = dim_y;
   costs->currentMax = num_of_wires;
-  costs->currentAggrTotal = INT_MAX;
   costs->board = (cost_cell_t *)calloc(dim_x * dim_y, sizeof(cost_cell_t));
+  printf("Complete allocate board\n");
 
   /* Initialize cost array */
   for( int y = 0; y < dim_y; y++){
     for( int x = 0; x < dim_x; x++){
-      costs->board[y*dim_y + x].val = 0;
-      omp_init_lock(costs->board[y*dim_y + x].lock);
+      omp_init_lock(&(costs->board[y*dim_y + x].lock));
     }
   }
-
+  printf("Complete initialize board\n");
   error = 0;
 
   init_time += duration_cast<dsec>(Clock::now() - init_start).count();
@@ -269,7 +309,7 @@ int main(int argc, const char *argv[])
     int i, j;
     path_t *mypath;
     int *bends, *bounds;
-    int num_bends, row;
+    int num_bends;
     int s_x, s_y, e_x, e_y;
     int b1_x, b1_y, b2_x, b2_y;
     // SHARED variables
@@ -281,87 +321,95 @@ int main(int argc, const char *argv[])
     for (i = 0; i < num_of_wires; i++){
       new_rand_path( &(wires[i]) );
     } /* implicit barrier */
-    /*  layout init board */
-    #pragma omp parallel for default(shared)                            \
-              private(j,mypath,num_bends,s_x,s_y,e_x,e_y,bends,bounds,row)\
-              shared(wires, B) schedule(dynamic)
-    for (j = 0; j < num_of_wires; j++){
-      // Initialize wire private variables
-      mypath    = wires[j].currentPath;
-      num_bends = mypath->numBends;
-      bends     = mypath->bends;
-      bounds    = mypath->bounds;
-      s_x = bounds[0];   // (start point)
-      s_y = bounds[1];
-      e_x = bounds[2];   // (end point)
-      e_y = bounds[3];
-      row = s_y * dim_y; // row to start for every case
-      // Follow path & update cost array
-      switch (num_bends) {
-        case 0:
-          if (s_y == e_y) // Horizontal path
-            horizontalCost(B, row, s_x, e_x);
-          else            // Vertical path
-            verticalCost(B, e_x, s_y, e_y, dim_y);
-        // TODO
-        case 1:
-          b1_x = bends[0];
-          b1_y = bends[1]; // Get bend coordinate
-          if (s_y == b1_y) // Before bend is horizontal
-          {
-            horizontalCost(B, row, s_x, b1_x);
-            // After bend must be vertical
-            verticalCost(B, row, b1_x, e_x, b1_y, e_y, dim_y);
-          }
-          if (s_x == b1_x)           // Before bend is vertical
-          {
-            verticalCost(B, row, s_x, b1_x, s_y, b1_y, dim_y);
-            // After bend must be horizontal
-            row = b1_y * dim_y;
-            horizontalCost(B, row, b1_x, e_x);
-          }
-        // TODO
-        case 2:
-          b1_x = bends[0]; // Get both bend coordinates
-          b1_y = bends[1];
-          b2_x = bends[2];
-          b2_y = bends[3];
-          while (num_bends != 0)
-          {
-            if (s_y == b1_y) // Before bend is horizontal
-            {
-              horizontalCost(B, row, s_x, b1_x);
-              verticalCost(B, row, b1_x, b1_y, b2_y, dim_y);//after bend is vertical
-            }
-            else             // Before bend is vertical
-            {
-              verticalCost(B, row, s_x, s_y, b1_y, dim_y);
-              row = b1_y * dim_y;
-              horizontalCost(B, row, b1_x, b2_x);//after bend is horizontal
-            }
-            //Update for next iteration
-            row = b2_y * dim_y;
-            s_x = b1_x; s_y = b1_y;
-            b1_x = b2_x; b1_y = b2_y;
-            b2_x = e_x; b2_y = e_y;
-            num_bends--;
-          }
-      }
-    } /* implicit barrier */
-
 
 
     /*@@@@@@@@@@@@@@ MAIN LOOP @@@@@@@@@@@@@@*/
     for (i = 0; i < SA_iters; i++) // N iterations
     {
       /* ######### PARALLEL BY WIRE #########*/
-      /* Update cost array*/
-      /* ############## END PRAGMA ############# */
+      clearBoard(B, dim_x, dim_y); // clean up board
+      /*  layout board */
+      #pragma omp parallel for default(shared)                            \
+                private(j,mypath,num_bends,s_x,s_y,e_x,e_y,bends,bounds)\
+                shared(wires, B) schedule(dynamic)
+      for (j = 0; j < num_of_wires; j++){
+        // Initialize wire private variables
+        mypath    = wires[j].currentPath;
+        num_bends = mypath->numBends;
+        bends     = mypath->bends;
+        bounds    = mypath->bounds;
+        s_x = bounds[0];   // (start point)
+        s_y = bounds[1];
+        e_x = bounds[2];   // (end point)
+        e_y = bounds[3];
+        // Follow path & update cost array
+        switch (num_bends) {
+          case 0:
+            if (s_y == e_y){ // Horizontal path
+              horizontalCost(B, s_y * dim_y, s_x, e_x);
+              incrCell(B, e_x, e_y, dim_y);
+              break;
+            }
+            if (s_x == e_x){            // Vertical path
+              verticalCost(B, e_x, s_y, e_y, dim_y);
+              incrCell(B, e_x, e_y, dim_y);
+              break;
+            }
+          case 1:
+            b1_x = bends[0];
+            b1_y = bends[1]; // Get bend coordinate
+            if (s_y == b1_y) // Before bend is horizontal
+            {
+              horizontalCost(B, s_y * dim_y, s_x, b1_x);
+              // After bend must be vertical
+              verticalCost(B, e_x, b1_y, e_y, dim_y);
+              incrCell(B, e_x, e_y, dim_y);
+              break;
+            }
+            if (s_x == b1_x)           // Before bend is vertical
+            {
+              verticalCost(B, s_x, s_y, b1_y, dim_y);
+              // After bend must be horizontal
+              horizontalCost(B, e_y*dim_y, b1_x, e_x);
+              incrCell(B, e_x, e_y, dim_y);
+              break;
+            }
+          case 2:
+            b1_x = bends[0]; // Get both bend coordinates
+            b1_y = bends[1];
+            b2_x = bends[2];
+            b2_y = bends[3];
+            // Exam first bend
+            if (s_y == b1_y) // Before bend is horizontal
+            {
+              horizontalCost(B, s_y*dim_y, s_x, b1_x);
+              verticalCost(B, b1_x, b1_y, b2_y, dim_y);//after bend is vertical
+              horizontalCost(B, e_y*dim_y, b2_x, e_x);
+              incrCell(B, e_x, e_y, dim_y);
+              break;
+            }
+            if (s_x == b1_x) // Before bend is vertical
+            {
+              verticalCost(B, s_x, s_y, b1_y, dim_y);
+              horizontalCost(B, b1_y*dim_y, b1_x, b2_x);//after bend is horizontal
+              verticalCost(B, b2_x, b2_y, e_y, dim_y);
+              incrCell(B, e_x, e_y, dim_y);
+              break;
+            }
+        }
+      } /* implicit barrier */
+
       /* Parallel by wire, calculate cost of current path */
       /* Parallel by wire, determine NEW path */
       // With probability 1 - P, choose the current min path.
+      #pragma omp parallel for default(shared)                       \
+                         private(i) shared(wires) schedule(dynamic)
+      for (i = 0; i < num_of_wires; i++){
+        new_rand_path( &(wires[i]) );
+      } /* implicit barrier */
+
       // Otherwise, choose a path at random
-    }
+    } /*  end iterations*/
   }
   /* #################### END PRAGMA ################### */
 
@@ -369,11 +417,29 @@ int main(int argc, const char *argv[])
   printf("Computation Time: %lf.\n", compute_time);
 
   /* Write wires and costs to files */
+  char cwd[1024];
+  if (getcwd(cwd, sizeof(cwd)) != NULL)
+    fprintf(stdout, "Current working dir: %s\n", cwd);
+  else
+    perror("getcwd() error");
   FILE *outputWire, *outputCost;
-  char costFileName[128] = "costs_";
-  char wireFileName[128] = "output_";
-  strcat(costFileName, argv[0]);
-  strcat(wireFileName, argv[0]);
+  char costFileName[1024];
+  char wireFileName[1024];
+  memset(costFileName, 0 , sizeof(costFileName));
+  memset(wireFileName, 0 , sizeof(wireFileName));
+  strcat(costFileName, cwd);
+  strcat(wireFileName, cwd);
+  strcat(costFileName, "/costs_");
+  strcat(wireFileName, "/output_");
+  // clean input_file_name
+  while(strlen(input_filename) != 0 && strchr(input_filename, '/') != NULL){
+    input_filename = strchr(input_filename, '/')+1;
+  }
+  memcpy(cwd, input_filename, sizeof(cwd));
+  char* ptr = strchr(cwd,'.');
+  *ptr = '\0';
+  strcat(costFileName, cwd);
+  strcat(wireFileName, cwd);
   strcat(wireFileName, "_");
   strcat(costFileName, "_");
   char buf[5];
@@ -387,7 +453,9 @@ int main(int argc, const char *argv[])
   outputCost = fopen(costFileName, "w");
   if (outputCost == NULL || outputWire == NULL)
   {
-    printf("Error opening file!\n");
+    perror("Error opening file!\n");
+    printf("filename : %s\n", wireFileName);
+    printf("filename : %s\n", costFileName);
     exit(1);
   }
 
@@ -424,7 +492,7 @@ int main(int argc, const char *argv[])
   // free the allocated wire and DS
   for( int y = 0; y < dim_y; y++){
     for( int x = 0; x < dim_x; x++){
-      omp_destroy_lock(costs->board[y*dim_y + x].lock);
+      omp_destroy_lock(&(costs->board[y*dim_y + x].lock));
     }
   }
   for(int i = 0; i < num_of_wires; i++){

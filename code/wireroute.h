@@ -34,7 +34,7 @@ typedef struct
  */
 typedef struct
 {
-	omp_lock_t* lock;
+	omp_lock_t lock;
 	int val;
 } cost_cell_t;
 
@@ -62,6 +62,8 @@ float get_option_float(const char *option_name, float default_value);
 void horizontalCost(cost_cell_t *C, int row, int startX, int endX);
 void verticalCost(cost_cell_t *C, int xCoord, int startY, int endY, int dimY);
 void new_rand_path(wire_t *wire);
+void incrCell(cost_cell_t *C, int x, int y, int dimY);
+void clearBoard(cost_cell_t *b, int dim_x, int dim_y);
 //void updateBoard(cost_t* board);
 
 #endif

@@ -184,7 +184,30 @@ inline int readBoard(cost_t *board, int x, int y){
   return board->board[y*board->dimY + x].val;
 }
 
-//////////////////////////////////////
+value_t readVertical(cost_t* board, int x, int s_y, int e_y){
+  value_t result;
+  result.aggr_max = 0;
+  result.m = 0;
+
+  return result;
+}
+
+value_t readHorizontal(cost_t* board, int y, int s_x, int e_x){
+  value_t result;
+  result.aggr_max = 0;
+  result.m = 0;
+
+  return result;
+}
+
+/////// board cost calculation
+value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
+          int numBends, int b1_x, int b1_y, int b2_x, int b2_y){
+  value_t result;
+  result.aggr_max = 0;
+  result.m = 0;
+  return result;
+}
 
 ///////////////////////////////////////////////////////////
 // MAIN ROUTINE
@@ -401,14 +424,16 @@ int main(int argc, const char *argv[])
         // With probability 1 - P, choose the current min path.
         srand(time(NULL));
         if((rand()%100) > int(SA_prob*100)){ // xx% chance pick the complicated optimization
-        ////////////////  TODO IMPLEMENT COMPLICATED ALGO ///////////////
-        mypath = wires[w].currentPath;
-        s_x = mypath->bounds[0];   // (start point)
-        s_y = mypath->bounds[1];
-        e_x = mypath->bounds[2];   // (end point)
-        e_y = mypath->bounds[3];
-
-
+          ////////////////  TODO IMPLEMENT COMPLICATED ALGO ///////////////
+          mypath = wires[w].currentPath;
+          s_x = mypath->bounds[0];   // (start point)
+          s_y = mypath->bounds[1];
+          e_x = mypath->bounds[2];   // (end point)
+          e_y = mypath->bounds[3];
+          // calculate current path
+          // calculate horizontal path
+          // calculate vertical path
+          // compare
         }
         else{ // xx% chance take random path
           new_rand_path( &(wires[w]) );

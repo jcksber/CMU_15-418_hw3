@@ -71,5 +71,9 @@ void verticalCost(cost_cell_t *C, int xCoord, int startY, int endY, int dimY);
 void new_rand_path(wire_t *wire);
 void incrCell(cost_cell_t *C, int x, int y, int dimY);
 void updateBoard(cost_t* board);
-
+inline int readBoard(cost_t* board, int x, int y);
+value_t readVertical(cost_t* board, int x, int s_y, int e_y);
+value_t readHorizontal(cost_t* board, int y, int s_x, int e_x);
+value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
+          int numBends, int b1_x, int b1_y, int b2_x, int b2_y);
 #endif

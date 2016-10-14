@@ -410,6 +410,77 @@ int main(int argc, const char *argv[])
 
       // Otherwise, choose a path at random
     } /*  end iterations*/
+
+    /*  Final layout board */
+    #pragma omp parallel for default(shared)                            \
+              private(j,mypath,num_bends,s_x,s_y,e_x,e_y,bends,bounds)\
+              shared(wires, B) schedule(dynamic)
+    for (j = 0; j < num_of_wires; j++){
+      // Initialize wire private variables
+      mypath    = wires[j].currentPath;
+      num_bends = mypath->numBends;
+      bends     = mypath->bends;
+      bounds    = mypath->bounds;
+      s_x = bounds[0];   // (start point)
+      s_y = bounds[1];
+      e_x = bounds[2];   // (end point)
+      e_y = bounds[3];
+      // Follow path & update cost array
+      switch (num_bends) {
+        case 0:
+          if (s_y == e_y){ // Horizontal path
+            horizontalCost(B, s_y * dim_y, s_x, e_x);
+            incrCell(B, e_x, e_y, dim_y);
+            break;
+          }
+          if (s_x == e_x){            // Vertical path
+            verticalCost(B, e_x, s_y, e_y, dim_y);
+            incrCell(B, e_x, e_y, dim_y);
+            break;
+          }
+        case 1:
+          b1_x = bends[0];
+          b1_y = bends[1]; // Get bend coordinate
+          if (s_y == b1_y) // Before bend is horizontal
+          {
+            horizontalCost(B, s_y * dim_y, s_x, b1_x);
+            // After bend must be vertical
+            verticalCost(B, e_x, b1_y, e_y, dim_y);
+            incrCell(B, e_x, e_y, dim_y);
+            break;
+          }
+          if (s_x == b1_x)           // Before bend is vertical
+          {
+            verticalCost(B, s_x, s_y, b1_y, dim_y);
+            // After bend must be horizontal
+            horizontalCost(B, e_y*dim_y, b1_x, e_x);
+            incrCell(B, e_x, e_y, dim_y);
+            break;
+          }
+        case 2:
+          b1_x = bends[0]; // Get both bend coordinates
+          b1_y = bends[1];
+          b2_x = bends[2];
+          b2_y = bends[3];
+          // Exam first bend
+          if (s_y == b1_y) // Before bend is horizontal
+          {
+            horizontalCost(B, s_y*dim_y, s_x, b1_x);
+            verticalCost(B, b1_x, b1_y, b2_y, dim_y);//after bend is vertical
+            horizontalCost(B, e_y*dim_y, b2_x, e_x);
+            incrCell(B, e_x, e_y, dim_y);
+            break;
+          }
+          if (s_x == b1_x) // Before bend is vertical
+          {
+            verticalCost(B, s_x, s_y, b1_y, dim_y);
+            horizontalCost(B, b1_y*dim_y, b1_x, b2_x);//after bend is horizontal
+            verticalCost(B, b2_x, b2_y, e_y, dim_y);
+            incrCell(B, e_x, e_y, dim_y);
+            break;
+          }
+      }
+    } /* implicit barrier */
   }
   /* #################### END PRAGMA ################### */
 

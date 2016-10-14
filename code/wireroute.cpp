@@ -306,14 +306,14 @@ int main(int argc, const char *argv[])
     /* ########## PARALLEL BY WIRE ##########*/
     /* Initialize all 'first' paths (create a start board) */
     #pragma omp parallel for default(shared)                       \
-      private(i) shared(wires) schedule(dynamic)
+      private(w) shared(wires) schedule(dynamic)
     for (w = 0; w < num_of_wires; w++){
       new_rand_path( &(wires[w]) );
     } /* implicit barrier */
 
     /*@@@@@@@@@@@@@@ MAIN LOOP @@@@@@@@@@@@@@*/
     for (i = 0; i < SA_iters; i++){
-      /* ######### PARALLEL BY WIRE #########*/
+      // Clean up the board
       #pragma omp parallel for default(shared) \
         private(y, x) shared(B) schedule(dynamic)
       for( y = 0; y < dim_y; y++){
@@ -388,15 +388,22 @@ int main(int argc, const char *argv[])
             }
         }
       } /* implicit barrier */
-
       /* Parallel by wire, calculate cost of current path */
       /* Parallel by wire, determine NEW path */
-      // With probability 1 - P, choose the current min path.
       #pragma omp parallel for default(shared)                       \
-        private(i) shared(wires) schedule(dynamic)
+          private(w) shared(wires) schedule(dynamic)
       for (w = 0; w < num_of_wires; w++){
-        new_rand_path( &(wires[w]) );
-      } /* implicit barrier */
+        // With probability 1 - P, choose the current min path.
+        srand(time(NULL));
+        if((rand()%100) > int(SA_prob*100)){ // xx% chance pick the complicated optimization
+          ////////////////  TODO IMPLEMENT COMPLICATED ALGO ///////////////
+
+
+        }
+        else{ // xx% chance take random path
+          new_rand_path( &(wires[w]) );
+        } /* implicit barrier */
+      }
     } /*  end iterations*/
 
     ////////////////////////////////////////////////////////////////////////////

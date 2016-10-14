@@ -65,6 +65,45 @@ static void show_help(const char *program_path)
 // HELPER FUNCTIONS
 /////////////////////////////////////
 
+/* init_wires *
+ * Clean up main routine, init wires here 
+ */
+void init_wires(FILE *input, wire_t *batch, int numWires)
+{
+  /* Read the grid dimension and wire information from file */
+  int count = 0;
+  while(count < numWires){
+    int s_x, s_y, e_x, e_y;
+    fscanf(input, "%d %d %d %d\n", &s_x, &s_y, &e_x, &e_y);
+    batch[count].prevPath = (path_t*)calloc(1, sizeof(path_t));
+    batch[count].currentPath = (path_t*)calloc(1, sizeof(path_t));
+    batch[count].currentPath->numBends = 0;
+    batch[count].currentPath->bounds[0] = s_x;
+    batch[count].currentPath->bounds[1] = s_y;
+    batch[count].currentPath->bounds[2] = e_x;
+    batch[count].currentPath->bounds[3] = e_y;
+    count++;
+  }
+}
+
+/* init_cost_array *
+ * Clean up main routine, init cost array here
+ */
+void init_cost_array(cost_t *arr, int numWires, int cols, int rows)
+{
+  costs->prevMax = num_of_wires;
+  // no init for the prev_total of cost_t
+  costs->board = (cost_cell_t *)calloc(dim_x * dim_y, sizeof(cost_cell_t));
+
+  /* Initialize cost array */
+  for( int y = 0; y < dim_y; y++){
+    for( int x = 0; x < dim_x; x++){
+      costs->board[y*dim_y + x].val = 0;
+      omp_init_lock(costs->board[y*dim_y + x].lock);
+    }
+  }
+}
+
 /* new_rand_path *
  * Generate a random path in the space of delta_x + delta_y
  */
@@ -88,10 +127,10 @@ void new_rand_path(wire_t *wire){
   wire->currentPath->numBends = bend;
 }
 
-/* horizontalCost *
+/* horizontal_cost *
  * Update cost array for horizontal traversal
  */
-void horizontalCost(cost_cell_t *C, int row, int startX, int endX)
+void horizontal_cost(cost_cell_t *C, int row, int startX, int endX)
 {
   cost_cell_t *c;
   // Determine path direction
@@ -119,10 +158,10 @@ void horizontalCost(cost_cell_t *C, int row, int startX, int endX)
   /*######################################*/
 }
 
-/* verticalCost *
+/* vertical_cost *
  * Update cost array for vertical traversal
  */
-void verticalCost(cost_cell_t *C, int row, int xCoord, int startY, int endY, int dimY)
+void vertical_cost(cost_cell_t *C, int row, int xCoord, int startY, int endY, int dimY)
 {
   cost_cell_t *c;
   // Determine path direction
@@ -204,36 +243,15 @@ int main(int argc, const char *argv[])
   fscanf(input, "%d %d\n", &dim_x, &dim_y);
   fscanf(input, "%d\n", &num_of_wires);
 
-  /* Allocate for array of wires */
+  /* ALLOCATE for array of wires */
   wire_t *wires = (wire_t *)calloc(num_of_wires, sizeof(wire_t));
+  /* INITIALIZE using input_file */
+  init_wires(wires, num_of_wires, input);
 
-  /* Read the grid dimension and wire information from file */
-  int count = 0;
-  while(count < num_of_wires){
-    int s_x, s_y, e_x, e_y;
-    fscanf(input, "%d %d %d %d\n", &s_x, &s_y, &e_x, &e_y);
-    wires[count].prevPath = (path_t*)calloc(1, sizeof(path_t));
-    wires[count].currentPath = (path_t*)calloc(1, sizeof(path_t));
-    wires[count].currentPath->numBends = 0;
-    wires[count].currentPath->bounds[0] = s_x;
-    wires[count].currentPath->bounds[1] = s_y;
-    wires[count].currentPath->bounds[2] = e_x;
-    wires[count].currentPath->bounds[3] = e_y;
-    count++;
-  }
-  /* Allocate for cost array struct */
+  /* ALLOCATE for cost array struct */
   cost_t *costs = (cost_t *)calloc(1, sizeof(cost_t));
-  costs->prevMax = num_of_wires;
-  // no init for the prev_total of cost_t
-  costs->board = (cost_cell_t *)calloc(dim_x * dim_y, sizeof(cost_cell_t));
-
-  /* Initialize cost array */
-  for( int y = 0; y < dim_y; y++){
-    for( int x = 0; x < dim_x; x++){
-      costs->board[y*dim_y + x].val = 0;
-      omp_init_lock(costs->board[y*dim_y + x].lock);
-    }
-  }
+  /* INITIALIZE using dimensions of grid & num_of_wires */
+  init_cost_array(costs, num_of_wires, dim_x, dim_y);
 
   error = 0;
 

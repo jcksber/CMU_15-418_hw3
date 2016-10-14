@@ -7,6 +7,8 @@
 #define __WIREOPT_H__
 
 #include <omp.h>
+#include <stdioh>
+#include <stdlib.h>
 
 /* Path struct - describe a single wire
  * Defined by start & end points and
@@ -55,8 +57,10 @@ int get_option_int(const char *option_name, int default_value);
 float get_option_float(const char *option_name, float default_value);
 
 /* Our helper functions */
-void horizontalCost(cost_cell_t *C, int row, int startX, int endX);
-void verticalCost(cost_cell_t *C, int row, int xCoord, int startY, int endY, int dimY);
+void init_wires(FILE *input, wire_t *batch, int numWires);
+void init_cost_array(cost_t *arr, int numWires, int cols, int rows);
 void new_rand_path(wire_t *wire);
+void horizontal_cost(cost_cell_t *C, int row, int startX, int endX);
+void vertical_cost(cost_cell_t *C, int row, int xCoord, int startY, int endY, int dimY);
 
 #endif

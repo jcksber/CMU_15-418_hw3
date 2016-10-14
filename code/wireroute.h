@@ -8,6 +8,13 @@
 
 #include <omp.h>
 
+/* value_t struct is used to calculate the local minimum path
+ */
+typedef struct{
+  int aggr_max;
+  int m;
+} value_t;
+
 /* Path struct - describe a single wire
  * Defined by start & end points and
  */

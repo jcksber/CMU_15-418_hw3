@@ -184,6 +184,7 @@ inline int readBoard(cost_t *board, int x, int y){
   return board->board[y*board->dimY + x].val;
 }
 
+// get vertical cell values
 value_t readVertical(cost_t* board, int x, int s_y, int e_y){
   value_t result;
   result.aggr_max = 0;
@@ -199,6 +200,7 @@ value_t readVertical(cost_t* board, int x, int s_y, int e_y){
   return result;
 }
 
+// get horizontal cell values
 value_t readHorizontal(cost_t* board, int y, int s_x, int e_x){
   value_t result;
   result.aggr_max = 0;
@@ -214,12 +216,86 @@ value_t readHorizontal(cost_t* board, int y, int s_x, int e_x){
   return result;
 }
 
+// combine to value_t into one
+value_t combineValue( value_t v1, value_t v2){
+  value_t ret;
+  ret.aggr_max = v1.aggr_max + v2.aggr_max;
+  ret.m = (v1.m > v2.m) ? v1.m : v2.m;
+  return ret;
+}
+
 /////// board cost calculation
 value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
           int numBends, int b1_x, int b1_y, int b2_x, int b2_y){
-  value_t result;
+  value_t result, temp, temp1, temp2;
+  int tmp_val = readBoard(board, e_x, e_y);
   result.aggr_max = 0;
   result.m = 0;
+  // Follow path & update cost array
+  switch (numBends) {
+    case 0:
+      if (s_y == e_y){ // Horizontal path
+        temp = readHorizontal(board, s_y, s_x, e_x);
+        if (tmp_val > 1) result.aggr_max = temp.aggr_max + tmp_val;
+        else result.aggr_max = temp.aggr_max;
+        result.m = (temp.m > tmp_val) ? temp.m : tmp_val;
+        break;
+      }
+      if (s_x == e_x){            // Vertical path
+        temp = readVertical(board, s_x, s_y, e_y);
+        if (tmp_val > 1) result.aggr_max = temp.aggr_max + tmp_val;
+        else result.aggr_max = temp.aggr_max;
+        result.m = (temp.m > tmp_val) ? temp.m : tmp_val;
+        break;
+      }
+    case 1:
+      if (s_y == b1_y) // Before bend is horizontal
+      {
+        temp1 = combineValue(readHorizontal(board, s_y, s_x, b1_x),
+            // After bend must be vertical
+            readVertical(board, e_x, b1_y, e_y));
+        if (tmp_val > 1) result.aggr_max = temp1.aggr_max + tmp_val;
+        else result.aggr_max = temp1.aggr_max;
+        result.m = (temp1.m > tmp_val) ? temp1.m : tmp_val;
+        break;
+      }
+      if (s_x == b1_x)           // Before bend is vertical
+      {
+        temp1 = combineValue(readVertical(board, s_x, s_y, b1_y),
+            // After bend must be horizontal
+              readHorizontal(board, e_y, b1_x, e_x));
+        if (tmp_val > 1) result.aggr_max = temp1.aggr_max + tmp_val;
+        else result.aggr_max = temp1.aggr_max;
+        result.m = (temp1.m > tmp_val) ? temp1.m : tmp_val;
+        break;
+      }
+    case 2:
+      if (s_y == b1_y) // Before bend is horizontal
+      {
+
+        // TODO
+        horizontalCost(B, s_y, s_x, b1_x, dim_y);
+        verticalCost(B, b1_x, b1_y, b2_y, dim_y);//after bend is vertical
+        horizontalCost(B, e_y, b2_x, e_x,dim_y);
+        if (tmp_val > 1) result.aggr_max = temp1.aggr_max + tmp_val;
+        else result.aggr_max = temp1.aggr_max;
+        result.m = (temp1.m > tmp_val) ? temp1.m : tmp_val;
+
+        break;
+      }
+      if (s_x == b1_x) // Before bend is vertical
+      {
+        // TODO
+        verticalCost(B, s_x, s_y, b1_y, dim_y);
+        horizontalCost(B, b1_y, b1_x, b2_x, dim_y);//after bend is horizontal
+        verticalCost(B, b2_x, b2_y, e_y, dim_y);
+        if (tmp_val > 1) result.aggr_max = temp1.aggr_max + tmp_val;
+        else result.aggr_max = temp1.aggr_max;
+        result.m = (temp1.m > tmp_val) ? temp1.m : tmp_val;
+
+        break;
+      }
+  }
   return result;
 }
 

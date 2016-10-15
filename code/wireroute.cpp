@@ -410,8 +410,9 @@ int main(int argc, const char *argv[])
 #endif
   {
     // PRIVATE variables
-    int i, j, x, y, w;
+    int i, j, x, y, w, row, col;
     path_t *mypath;
+    value_t localMax;
     int s_x, s_y, e_x, e_y;
     int b1_x, b1_y, b2_x, b2_y;
     // SHARED variables
@@ -503,19 +504,26 @@ int main(int argc, const char *argv[])
       } /* implicit barrier */
       /* Parallel by wire, calculate cost of current path */
       /* Parallel by wire, determine NEW path */
-      #pragma omp parallel for default(shared)                       \
-          private(w, mypath, s_x, s_y, e_x, e_y) shared(wires, costs) schedule(dynamic)
+      #pragma omp parallel for default(shared)       \
+          private(w, mypath, localMax, s_x, s_y, e_x, e_y, b1_x, b2_x, b1_y, b2_y)  \
+              shared(wires, costs) schedule(dynamic)
       for (w = 0; w < num_of_wires; w++){
         // With probability 1 - P, choose the current min path.
         srand(time(NULL));
-        if((rand()%100) > int(SA_prob*100)){ // xx% chance pick the complicated optimization
-          ////////////////  TODO IMPLEMENT COMPLICATED ALGO ///////////////
+        if((rand()%100) > int(SA_prob*100)){ // xx% chance pick the complicated  algo
+          ///////////// IMPLEMENT COMPLICATED ALGO ///////////////
           mypath = wires[w].currentPath;
           s_x = mypath->bounds[0];   // (start point)
           s_y = mypath->bounds[1];
           e_x = mypath->bounds[2];   // (end point)
           e_y = mypath->bounds[3];
-          // calculate current path
+          b1_x = mypath->bends[0];
+          b1_y = mypath->bends[1];
+          b2_x = mypath->bends[2];
+          b2_y = mypath->bends[3];
+          localMax = calculatePath(costs, s_x, s_y, e_x, e_y, mypath->numBends,
+                          b1_x, b1_y, b2_x, b2_y);
+
           // calculate horizontal path
           // calculate vertical path
           // compare
@@ -524,6 +532,7 @@ int main(int argc, const char *argv[])
           new_rand_path( &(wires[w]) );
         } /* implicit barrier */
       }
+      // Finish picking the new path
     } /*  end iterations*/
 
     ////////////////////////////////////////////////////////////////////////////

@@ -272,27 +272,22 @@ value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
     case 2:
       if (s_y == b1_y) // Before bend is horizontal
       {
-
-        // TODO
-        horizontalCost(B, s_y, s_x, b1_x, dim_y);
-        verticalCost(B, b1_x, b1_y, b2_y, dim_y);//after bend is vertical
-        horizontalCost(B, e_y, b2_x, e_x,dim_y);
-        if (tmp_val > 1) result.aggr_max = temp1.aggr_max + tmp_val;
-        else result.aggr_max = temp1.aggr_max;
-        result.m = (temp1.m > tmp_val) ? temp1.m : tmp_val;
-
+        temp = combineValue(readHorizontal(board, s_y, s_x, b1_x),
+                readVertical(board, b1_x, b1_y, b2_y));//after bend is vertical
+        temp2 = combineValue(temp, readHorizontal(board, e_y, b2_x, e_x));
+        if (tmp_val > 1) result.aggr_max = temp2.aggr_max + tmp_val;
+        else result.aggr_max = temp2.aggr_max;
+        result.m = (temp2.m > tmp_val) ? temp2.m : tmp_val;
         break;
       }
       if (s_x == b1_x) // Before bend is vertical
       {
-        // TODO
-        verticalCost(B, s_x, s_y, b1_y, dim_y);
-        horizontalCost(B, b1_y, b1_x, b2_x, dim_y);//after bend is horizontal
-        verticalCost(B, b2_x, b2_y, e_y, dim_y);
-        if (tmp_val > 1) result.aggr_max = temp1.aggr_max + tmp_val;
-        else result.aggr_max = temp1.aggr_max;
-        result.m = (temp1.m > tmp_val) ? temp1.m : tmp_val;
-
+        temp = combineValue(readVertical(board, s_x, s_y, b1_y),
+            readHorizontal(board, b1_y, b1_x, b2_x));//after bend is horizontal
+        temp2 = combineValue(temp, readVertical(board, b2_x, b2_y, e_y));
+        if (tmp_val > 1) result.aggr_max = temp2.aggr_max + tmp_val;
+        else result.aggr_max = temp2.aggr_max;
+        result.m = (temp2.m > tmp_val) ? temp2.m : tmp_val;
         break;
       }
   }

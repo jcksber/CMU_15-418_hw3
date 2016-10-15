@@ -412,9 +412,11 @@ int main(int argc, const char *argv[])
     // PRIVATE variables
     int i, j, x, y, w, row, col;
     path_t *mypath;
-    value_t localMax;
+    value_t localMax, tempMax;
     int s_x, s_y, e_x, e_y;
     int b1_x, b1_y, b2_x, b2_y;
+    int n1_x, n1_y, n2_x, n2_y;
+    int nBend, dir;
     // SHARED variables
     cost_cell_t *B = costs->board;
     /* ########## PARALLEL BY WIRE ##########*/
@@ -505,13 +507,15 @@ int main(int argc, const char *argv[])
       /* Parallel by wire, calculate cost of current path */
       /* Parallel by wire, determine NEW path */
       #pragma omp parallel for default(shared)       \
-          private(w, mypath, localMax, s_x, s_y, e_x, e_y, b1_x, b2_x, b1_y, b2_y)  \
+          private(w,row, col,  mypath, localMax, tempMax, s_x, s_y, e_x, e_y, b1_x, b2_x, \
+                  b1_y, b2_y, n1_x, n1_y, n2_x, n2_y, nBend, dir) \
               shared(wires, costs) schedule(dynamic)
       for (w = 0; w < num_of_wires; w++){
         // With probability 1 - P, choose the current min path.
         srand(time(NULL));
         if((rand()%100) > int(SA_prob*100)){ // xx% chance pick the complicated  algo
           ///////////// IMPLEMENT COMPLICATED ALGO ///////////////
+          // case 0 bend:
           mypath = wires[w].currentPath;
           s_x = mypath->bounds[0];   // (start point)
           s_y = mypath->bounds[1];
@@ -521,12 +525,68 @@ int main(int argc, const char *argv[])
           b1_y = mypath->bends[1];
           b2_x = mypath->bends[2];
           b2_y = mypath->bends[3];
-          localMax = calculatePath(costs, s_x, s_y, e_x, e_y, mypath->numBends,
-                          b1_x, b1_y, b2_x, b2_y);
-
-          // calculate horizontal path
-          // calculate vertical path
-          // compare
+          n1_x = b1_x;
+          n1_y = b1_y;
+          n2_x = b2_x;
+          n2_y = b2_y;
+          nBend = mypath->numBends;
+          if ( s_x != e_x && s_y != e_y){
+            localMax = calculatePath(costs, s_x, s_y, e_x, e_y, nBend, b1_x, b1_y, b2_x, b2_y);
+            // case of one bend, at the end points
+            // -> horizontal first:
+            tempMax = calculatePath(costs, s_x, s_y, e_x, e_y, 1 ,e_x, s_y, 0, 0);
+            if(tempMax.m < localMax.m || (tempMax.m == localMax.m && tempMax.aggr_max < localMax.aggr_max)){
+              localMax.m = tempMax.m;
+              localMax.aggr_max = tempMax.aggr_max;
+              nBend = 1;
+              n1_x = e_x;
+              n1_y = s_y;
+            }
+            // -> vertical one bend
+            tempMax = calculatePath(costs, s_x, s_y, e_x, e_y, 1 ,s_x, e_y, 0, 0);
+            if(tempMax.m < localMax.m || (tempMax.m == localMax.m && tempMax.aggr_max < localMax.aggr_max)){
+              localMax.m = tempMax.m;
+              localMax.aggr_max = tempMax.aggr_max;
+              nBend = 1;
+              n1_x = s_x;
+              n1_y = e_y;
+            }
+            // calculate horizontal path
+            dir = (e_x > s_x) ? 1 : -1;
+            for ( col = s_x + dir; col != e_x; col += dir){
+              tempMax = calculatePath(costs, s_x, s_y, e_x, e_y,2, col, s_y, col , e_y);
+              if(tempMax.m < localMax.m || (tempMax.m == localMax.m && tempMax.aggr_max < localMax.aggr_max)){
+                localMax.m = tempMax.m;
+                localMax.aggr_max = tempMax.aggr_max;
+                nBend = 2;
+                n1_x = col;
+                n1_y = s_y;
+                n2_x = col;
+                n2_y = e_y;
+              }
+            }
+            // calculate vertical path
+            dir = (e_y > s_y) ? 1 : -1;
+            for(row = s_y + dir; row != e_y; row += dir){
+              tempMax = calculatePath(costs, s_x, s_y, e_x, e_y, 2, s_x, row, e_x, row);
+              if(tempMax.m < localMax.m || (tempMax.m == localMax.m && tempMax.aggr_max < localMax.aggr_max)){
+                localMax.m = tempMax.m;
+                localMax.aggr_max = tempMax.aggr_max;
+                nBend = 2;
+                n1_x = s_x;
+                n1_y = row;
+                n2_x = e_x;
+                n2_y = row;
+              }
+            }
+          }
+          // set new wire
+          std::memcpy(wire->prevPath, wire->currentPath, sizeof(wire_t));
+          mypath->numBends = nBend;
+          mypath->bends[0] = n1_x;
+          mypath->bends[1] = n1_y;
+          mypath->bends[2] = n2_x;
+          mypath->bends[3] = n2_y;
         }
         else{ // xx% chance take random path
           new_rand_path( &(wires[w]) );

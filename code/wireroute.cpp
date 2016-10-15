@@ -368,6 +368,14 @@ inline void decrValue(cost_t board, int x, int y){
   board.board[board.dimY * y + x].val -= 1;
 }
 
+void copyBoard(cost_cell_t *dest, cost_cell_t *src, int dimX, int dimY){
+  for ( int r = 0; r < dimY; r++){
+    for ( int c = 0; c < dimX; c++){
+      dest[r*dimY + c].val = src[r*dimY + c].val;
+    }
+  }
+}
+
 ///////////////////////////////////////////////////////////
 // MAIN ROUTINE
 ///////////////////////////////////////////////////////////
@@ -585,16 +593,16 @@ int main(int argc, const char *argv[])
             }
         }
       } /* implicit barrier */
-      /* Save temp board for calculation */
+      /* Save temp board for calculation
       #pragma omp parallel for default(shared) \
         private(w) shared(ref_board, wires, B) schedule(dynamic)
       for( w = 0 ; w < num_of_wires; w++){
-        std::memcpy(ref_board[w].board, B, dim_x*dim_y*sizeof(cost_cell_t));
+        // copyBoard(ref_board[w].board, B, dim_x, dim_y);
         // clean up current wire
         //cleanUpWire(ref_board[w], wires[w].currentPath);
       }
       printf("finish cleanup \n");
-
+    */
       /* Parallel by wire, determine NEW path */
       #pragma omp parallel for default(shared)       \
           private(w,row, col,  mypath, localMax, tempMax, s_x, s_y, e_x, e_y, b1_x, b2_x, \

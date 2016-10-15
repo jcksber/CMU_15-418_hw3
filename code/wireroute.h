@@ -79,4 +79,5 @@ value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
 value_t combineValue(value_t v1, value_t v2);
 void cleanUpWire( cost_t board, path_t * path);
 inline void decrValue(cost_t board, int x, int y);
+void copyBoard(cost_cell_t *dest, cost_cell_t *src, int dimX, int dimY);
 #endif

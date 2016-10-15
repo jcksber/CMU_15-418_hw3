@@ -515,7 +515,6 @@ int main(int argc, const char *argv[])
         srand(time(NULL));
         if((rand()%100) > int(SA_prob*100)){ // xx% chance pick the complicated  algo
           //printf("Running Complicated Path Generating Algo %d %d  \n", rand() %100, int(SA_prob*100));
-          // case 0 bend:
           mypath = wires[w].currentPath;
           s_x = mypath->bounds[0];   // (start point)
           s_y = mypath->bounds[1];
@@ -535,7 +534,7 @@ int main(int argc, const char *argv[])
             // case of one bend, at the end points
             // -> horizontal first:
             tempMax = calculatePath(costs, s_x, s_y, e_x, e_y, 1 ,e_x, s_y, 0, 0);
-            if(tempMax.m < localMax.m ){// || (tempMax.m == localMax.m && tempMax.aggr_max < localMax.aggr_max)){
+            if(tempMax.m < localMax.m && tempMax.aggr_max < localMax.aggr_max){
               localMax.m = tempMax.m;
               localMax.aggr_max = tempMax.aggr_max;
               nBend = 1;
@@ -544,7 +543,7 @@ int main(int argc, const char *argv[])
             }
             // -> vertical one bend
             tempMax = calculatePath(costs, s_x, s_y, e_x, e_y, 1 ,s_x, e_y, 0, 0);
-            if(tempMax.m < localMax.m ){//|| (tempMax.m == localMax.m && tempMax.aggr_max < localMax.aggr_max)){
+            if(tempMax.m < localMax.m && tempMax.aggr_max < localMax.aggr_max){
               localMax.m = tempMax.m;
               localMax.aggr_max = tempMax.aggr_max;
               nBend = 1;
@@ -555,7 +554,7 @@ int main(int argc, const char *argv[])
             dir = (e_x > s_x) ? 1 : -1;
             for ( col = s_x + dir; col != e_x; col += dir){
               tempMax = calculatePath(costs, s_x, s_y, e_x, e_y,2, col, s_y, col , e_y);
-              if(tempMax.m < localMax.m){// || (tempMax.m == localMax.m && tempMax.aggr_max < localMax.aggr_max)){
+              if(tempMax.m < localMax.m && tempMax.aggr_max < localMax.aggr_max){
                 localMax.m = tempMax.m;
                 localMax.aggr_max = tempMax.aggr_max;
                 nBend = 2;
@@ -569,7 +568,7 @@ int main(int argc, const char *argv[])
             dir = (e_y > s_y) ? 1 : -1;
             for(row = s_y + dir; row != e_y; row += dir){
               tempMax = calculatePath(costs, s_x, s_y, e_x, e_y, 2, s_x, row, e_x, row);
-              if(tempMax.m < localMax.m){// || (tempMax.m == localMax.m && tempMax.aggr_max < localMax.aggr_max)){
+              if(tempMax.m < localMax.m && tempMax.aggr_max < localMax.aggr_max){
                 localMax.m = tempMax.m;
                 localMax.aggr_max = tempMax.aggr_max;
                 nBend = 2;
@@ -762,11 +761,11 @@ int main(int argc, const char *argv[])
     }
   }
   for(int i = 0; i < num_of_wires; i++){
-    delete[] wires[i].currentPath;
-    delete[] wires[i].prevPath;
+    free(wires[i].currentPath);
+    free(wires[i].prevPath);
   }
-  delete[] wires;
-  delete[] costs->board;
-  delete[] costs;
+  free(wires);
+  free(costs->board);
+  free(costs);
   return 0;
 }

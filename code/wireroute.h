@@ -46,8 +46,12 @@ typedef struct
  */
 typedef struct
 {
+  int dimX;
+  int dimY;
   int prevMax;
   int prevAggrTotal;
+  int currentMax;
+  int currentAggrTotal;
   cost_cell_t* board;
 } cost_t;
 
@@ -60,7 +64,8 @@ float get_option_float(const char *option_name, float default_value);
 void init_wires(FILE *input, wire_t *batch, int numWires);
 void init_cost_array(cost_t *arr, int numWires, int cols, int rows);
 void new_rand_path(wire_t *wire);
-void horizontal_cost(cost_cell_t *C, int row, int startX, int endX);
-void vertical_cost(cost_cell_t *C, int row, int xCoord, int startY, int endY, int dimY);
+void incr_cell(cost_t *C, int x, int y);
+void path_cost(cost_t *C, int z, int start, int end);
+// void vertical_cost(cost_t *C, int x, int startY, int endY);
 
 #endif

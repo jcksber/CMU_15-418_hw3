@@ -581,7 +581,7 @@ int main(int argc, const char *argv[])
             }
           }
           // set new wire
-          std::memcpy(wire->prevPath, wire->currentPath, sizeof(wire_t));
+          std::memcpy(wires[w].prevPath, mypath, sizeof(wire_t));
           mypath->numBends = nBend;
           mypath->bends[0] = n1_x;
           mypath->bends[1] = n1_y;

@@ -77,4 +77,6 @@ value_t readHorizontal(cost_t* board, int y, int s_x, int e_x);
 value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
           int numBends, int b1_x, int b1_y, int b2_x, int b2_y);
 value_t combineValue(value_t v1, value_t v2);
+void cleanUpWire( cost_t board, path_t * path);
+inline void decrValue(cost_t board, int x, int y);
 #endif

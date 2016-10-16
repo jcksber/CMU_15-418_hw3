@@ -84,13 +84,13 @@ void init_wires(FILE *input, wire_t *batch, int numWires)
 /* init_cost_array *
  * Clean up main routine, init cost array here
  */
+/*
 void init_cost_array(cost_t *arr, int numWires, int cols, int rows)
 {
   costs->prevMax = num_of_wires;
   // no init for the prev_total of cost_t
   costs->board = (cost_cell_t *)calloc(dim_x * dim_y, sizeof(cost_cell_t));
 
-  /* Initialize cost array */
   for( int y = 0; y < dim_y; y++){
     for( int x = 0; x < dim_x; x++){
       costs->board[y*dim_y + x].val = 0;
@@ -98,7 +98,7 @@ void init_cost_array(cost_t *arr, int numWires, int cols, int rows)
     }
   }
 }
-
+*/
 /* new_rand_path *
  * Generate a random path in the space of delta_x + delta_y
  * 50% change pick x traversal  50% chance pick y traversal

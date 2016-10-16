@@ -79,7 +79,7 @@ void new_rand_path(wire_t *wire){
     wire->currentPath->numBends = bend;
     return;
   }
-  // not in the same line, need at least one bend
+  // not in` the same line, need at least one bend
   bend +=1;
   dy = abs(e_y - s_y);
   dx = abs(e_x - s_x);
@@ -120,14 +120,14 @@ void new_rand_path(wire_t *wire){
  * Update cost array for horizontal traversal
  * Input: ptr to board, y coord, starting x, ending x, dim_y
  */
-void horizontalCost(cost_cell_t *C, int row, int startX, int endX, int dimY){
+void horizontalCost(cost_cell_t *C, int row, int startX, int endX, int dimY, int wire_n){
   int s_x = startX;
   // Determine path direction
   int dir = startX > endX ? -1 : 1;
   /* Update cost array for given wire */
   while (s_x != endX){
     /*### UPDATING CELL: CRITICAL REGION ###*/
-      incrCell(C, s_x, row, dimY);
+      incrCell(C, s_x, row, dimY, wire_n);
     /*######################################*/
     s_x += dir; // add/subtract a column
   }
@@ -137,14 +137,14 @@ void horizontalCost(cost_cell_t *C, int row, int startX, int endX, int dimY){
  * Update cost array for vertical traversal
  * Input: ptr to board, x coord, starting y, ending y, dim_y
  */
-void verticalCost(cost_cell_t *C, int xCoord, int startY, int endY, int dimY){
+void verticalCost(cost_cell_t *C, int xCoord, int startY, int endY, int dimY, int wire_n){
   int s_y = startY;
   // Determine path direction
   int dir = startY > endY ? -1 : 1;
   /* Update cost array for given wire */
   while (s_y != endY){
     /*### UPDATING CELL: CRITICAL REGION ###*/
-      incrCell(C, xCoord, s_y, dimY);
+      incrCell(C, xCoord, s_y, dimY, wire_n);
     /*######################################*/
     s_y += dir;
   }
@@ -152,11 +152,15 @@ void verticalCost(cost_cell_t *C, int xCoord, int startY, int endY, int dimY){
 
 // Use cell level lock to safely incre value by 1
 // INPUT: ptr to board, x coord , y coord, dim_y
-void incrCell(cost_cell_t *C, int x, int y, int dimY){
+void incrCell(cost_cell_t *C, int x, int y, int dimY, int wire_n){
   cost_cell_t *c;
   c = &C[y*dimY + x]; // calculate the idx in board
   omp_set_lock(&c->lock);
     c->val +=1;
+    if(c->wire < WIRE_MAX){
+      c->list[c->wire] = wire_n;
+      c->wire += 1;
+    }
   omp_unset_lock(&c->lock);
 }
 
@@ -180,19 +184,25 @@ void updateBoard(cost_t *board){
 }
 
 // read a value in the board
-inline int readBoard(cost_t *board, int x, int y){
-  return board->board[y*board->dimY + x].val;
+inline int readBoard(cost_t *board, int x, int y, int wire_n){
+  cost_cell_t *c;
+  c = &board->board[y*board->dimY + x];
+  for (int count = 0; count < c->wire; count++){
+    if(wire_n == c->list[count])
+      return c->val-1;
+  }
+  return c->val;
 }
 
 // get vertical cell values
-value_t readVertical(cost_t* board, int x, int s_y, int e_y){
+value_t readVertical(cost_t* board, int x, int s_y, int e_y, int wire_n){
   value_t result;
   result.aggr_max = 0;
   result.m = 0;
   int dir = s_y > e_y ? -1:1;
   int c = s_y;
   while(c != e_y){
-    int val = readBoard(board,x,c);
+    int val = readBoard(board,x,c, wire_n);
     if(result.m < val) result.m = val;
     if(val > 1) result.aggr_max += val;
     c += dir;
@@ -201,14 +211,14 @@ value_t readVertical(cost_t* board, int x, int s_y, int e_y){
 }
 
 // get horizontal cell values
-value_t readHorizontal(cost_t* board, int y, int s_x, int e_x){
+value_t readHorizontal(cost_t* board, int y, int s_x, int e_x, int wire_n){
   value_t result;
   result.aggr_max = 0;
   result.m = 0;
   int dir = s_x > e_x ? -1:1;
   int c = s_x;
   while(c != e_x){
-    int val = readBoard(board,c,y);
+    int val = readBoard(board,c,y, wire_n);
     if(result.m < val) result.m = val;
     if(val > 1) result.aggr_max += val;
     c += dir;
@@ -226,23 +236,23 @@ value_t combineValue( value_t v1, value_t v2){
 
 /////// board cost calculation
 value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
-          int numBends, int b1_x, int b1_y, int b2_x, int b2_y){
+          int numBends, int b1_x, int b1_y, int b2_x, int b2_y, int wire_n){
   value_t result, temp, temp1, temp2;
-  int tmp_val = readBoard(board, e_x, e_y);
+  int tmp_val = readBoard(board, e_x, e_y, wire_n);
   result.aggr_max = 0;
   result.m = 0;
   // Follow path & update cost array
   switch (numBends) {
     case 0:
       if (s_y == e_y){ // Horizontal path
-        temp = readHorizontal(board, s_y, s_x, e_x);
+        temp = readHorizontal(board, s_y, s_x, e_x,wire_n);
         if (tmp_val > 1) result.aggr_max = temp.aggr_max + tmp_val;
         else result.aggr_max = temp.aggr_max;
         result.m = (temp.m > tmp_val) ? temp.m : tmp_val;
         break;
       }
       if (s_x == e_x){            // Vertical path
-        temp = readVertical(board, s_x, s_y, e_y);
+        temp = readVertical(board, s_x, s_y, e_y,wire_n);
         if (tmp_val > 1) result.aggr_max = temp.aggr_max + tmp_val;
         else result.aggr_max = temp.aggr_max;
         result.m = (temp.m > tmp_val) ? temp.m : tmp_val;
@@ -251,9 +261,9 @@ value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
     case 1:
       if (s_y == b1_y) // Before bend is horizontal
       {
-        temp1 = combineValue(readHorizontal(board, s_y, s_x, b1_x),
+        temp1 = combineValue(readHorizontal(board, s_y, s_x, b1_x,wire_n),
             // After bend must be vertical
-            readVertical(board, e_x, b1_y, e_y));
+            readVertical(board, e_x, b1_y, e_y,wire_n));
         if (tmp_val > 1) result.aggr_max = temp1.aggr_max + tmp_val;
         else result.aggr_max = temp1.aggr_max;
         result.m = (temp1.m > tmp_val) ? temp1.m : tmp_val;
@@ -261,9 +271,9 @@ value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
       }
       if (s_x == b1_x)           // Before bend is vertical
       {
-        temp1 = combineValue(readVertical(board, s_x, s_y, b1_y),
+        temp1 = combineValue(readVertical(board, s_x, s_y, b1_y,wire_n),
             // After bend must be horizontal
-              readHorizontal(board, e_y, b1_x, e_x));
+              readHorizontal(board, e_y, b1_x, e_x,wire_n));
         if (tmp_val > 1) result.aggr_max = temp1.aggr_max + tmp_val;
         else result.aggr_max = temp1.aggr_max;
         result.m = (temp1.m > tmp_val) ? temp1.m : tmp_val;
@@ -272,9 +282,9 @@ value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
     case 2:
       if (s_y == b1_y) // Before bend is horizontal
       {
-        temp = combineValue(readHorizontal(board, s_y, s_x, b1_x),
-                readVertical(board, b1_x, b1_y, b2_y));//after bend is vertical
-        temp2 = combineValue(temp, readHorizontal(board, e_y, b2_x, e_x));
+        temp = combineValue(readHorizontal(board, s_y, s_x, b1_x,wire_n),
+                readVertical(board, b1_x, b1_y, b2_y,wire_n));//after bend is vertical
+        temp2 = combineValue(temp, readHorizontal(board, e_y, b2_x, e_x,wire_n));
         if (tmp_val > 1) result.aggr_max = temp2.aggr_max + tmp_val;
         else result.aggr_max = temp2.aggr_max;
         result.m = (temp2.m > tmp_val) ? temp2.m : tmp_val;
@@ -282,9 +292,9 @@ value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
       }
       if (s_x == b1_x) // Before bend is vertical
       {
-        temp = combineValue(readVertical(board, s_x, s_y, b1_y),
-            readHorizontal(board, b1_y, b1_x, b2_x));//after bend is horizontal
-        temp2 = combineValue(temp, readVertical(board, b2_x, b2_y, e_y));
+        temp = combineValue(readVertical(board, s_x, s_y, b1_y,wire_n),
+            readHorizontal(board, b1_y, b1_x, b2_x,wire_n));//after bend is horizontal
+        temp2 = combineValue(temp, readVertical(board, b2_x, b2_y, e_y,wire_n));
         if (tmp_val > 1) result.aggr_max = temp2.aggr_max + tmp_val;
         else result.aggr_max = temp2.aggr_max;
         result.m = (temp2.m > tmp_val) ? temp2.m : tmp_val;
@@ -293,7 +303,7 @@ value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
   }
   return result;
 }
-
+/*
 void cleanUpWire(cost_t board, path_t *path){
   int s_x, s_y, e_x, e_y, dirx, diry;
   int b1_x, b1_y, b2_x, b2_y;
@@ -375,7 +385,7 @@ void copyBoard(cost_cell_t *dest, cost_cell_t *src, int dimX, int dimY){
     }
   }
 }
-
+*/
 ///////////////////////////////////////////////////////////
 // MAIN ROUTINE
 ///////////////////////////////////////////////////////////
@@ -524,6 +534,7 @@ int main(int argc, const char *argv[])
       for( y = 0; y < dim_y; y++){
         for( x = 0; x < dim_x; x++){
           B[y*dim_y + x].val = 0;  // clean up board
+          B[y*dim_y + x].wire = 0;  // clean up board
         }
       }
       /*  layout board */
@@ -541,13 +552,13 @@ int main(int argc, const char *argv[])
         switch (mypath->numBends) {
           case 0:
             if (s_y == e_y){ // Horizontal path
-              horizontalCost(B, s_y, s_x, e_x, dim_y);
-              incrCell(B, e_x, e_y, dim_y);
+              horizontalCost(B, s_y, s_x, e_x, dim_y, j);
+              incrCell(B, e_x, e_y, dim_y, j);
               break;
             }
             if (s_x == e_x){            // Vertical path
-              verticalCost(B, e_x, s_y, e_y, dim_y);
-              incrCell(B, e_x, e_y, dim_y);
+              verticalCost(B, e_x, s_y, e_y, dim_y, j);
+              incrCell(B, e_x, e_y, dim_y, j);
               break;
             }
           case 1:
@@ -555,18 +566,18 @@ int main(int argc, const char *argv[])
             b1_y = mypath->bends[1]; // Get bend coordinate
             if (s_y == b1_y) // Before bend is horizontal
             {
-              horizontalCost(B, s_y, s_x, b1_x, dim_y);
+              horizontalCost(B, s_y, s_x, b1_x, dim_y,j);
               // After bend must be vertical
-              verticalCost(B, e_x, b1_y, e_y, dim_y);
-              incrCell(B, e_x, e_y, dim_y);
+              verticalCost(B, e_x, b1_y, e_y, dim_y , j);
+              incrCell(B, e_x, e_y, dim_y, j);
               break;
             }
             if (s_x == b1_x)           // Before bend is vertical
             {
-              verticalCost(B, s_x, s_y, b1_y, dim_y);
+              verticalCost(B, s_x, s_y, b1_y, dim_y, j);
               // After bend must be horizontal
-              horizontalCost(B, e_y, b1_x, e_x, dim_y);
-              incrCell(B, e_x, e_y, dim_y);
+              horizontalCost(B, e_y, b1_x, e_x, dim_y,j);
+              incrCell(B, e_x, e_y, dim_y, j);
               break;
             }
           case 2:
@@ -577,18 +588,18 @@ int main(int argc, const char *argv[])
             // Exam first bend
             if (s_y == b1_y) // Before bend is horizontal
             {
-              horizontalCost(B, s_y, s_x, b1_x, dim_y);
-              verticalCost(B, b1_x, b1_y, b2_y, dim_y);//after bend is vertical
-              horizontalCost(B, e_y, b2_x, e_x,dim_y);
-              incrCell(B, e_x, e_y, dim_y);
+              horizontalCost(B, s_y, s_x, b1_x, dim_y, j);
+              verticalCost(B, b1_x, b1_y, b2_y, dim_y, j);//after bend is vertical
+              horizontalCost(B, e_y, b2_x, e_x,dim_y, j);
+              incrCell(B, e_x, e_y, dim_y, j);
               break;
             }
             if (s_x == b1_x) // Before bend is vertical
             {
-              verticalCost(B, s_x, s_y, b1_y, dim_y);
-              horizontalCost(B, b1_y, b1_x, b2_x, dim_y);//after bend is horizontal
-              verticalCost(B, b2_x, b2_y, e_y, dim_y);
-              incrCell(B, e_x, e_y, dim_y);
+              verticalCost(B, s_x, s_y, b1_y, dim_y, j);
+              horizontalCost(B, b1_y, b1_x, b2_x, dim_y, j);//after bend is horizontal
+              verticalCost(B, b2_x, b2_y, e_y, dim_y, j);
+              incrCell(B, e_x, e_y, dim_y, j);
               break;
             }
         }
@@ -628,10 +639,10 @@ int main(int argc, const char *argv[])
           n2_y = b2_y;
           nBend = mypath->numBends;
           if ( s_x != e_x && s_y != e_y){
-            localMax = calculatePath(&ref_board[w], s_x, s_y, e_x, e_y, nBend, b1_x, b1_y, b2_x, b2_y);
+            localMax = calculatePath(costs, s_x, s_y, e_x, e_y, nBend, b1_x, b1_y, b2_x, b2_y, -1);
             // case of one bend, at the end points
             // -> horizontal first:
-            tempMax = calculatePath(&ref_board[w], s_x, s_y, e_x, e_y, 1 ,e_x, s_y, 0, 0);
+            tempMax = calculatePath(costs, s_x, s_y, e_x, e_y, 1 ,e_x, s_y, 0, 0, w);
             if(tempMax.m < localMax.m && tempMax.aggr_max < localMax.aggr_max){
               localMax.m = tempMax.m;
               localMax.aggr_max = tempMax.aggr_max;
@@ -640,7 +651,7 @@ int main(int argc, const char *argv[])
               n1_y = s_y;
             }
             // -> vertical one bend
-            tempMax = calculatePath(&ref_board[w], s_x, s_y, e_x, e_y, 1 ,s_x, e_y, 0, 0);
+            tempMax = calculatePath(costs, s_x, s_y, e_x, e_y, 1 ,s_x, e_y, 0, 0, w);
             if(tempMax.m < localMax.m && tempMax.aggr_max < localMax.aggr_max){
               localMax.m = tempMax.m;
               localMax.aggr_max = tempMax.aggr_max;
@@ -651,7 +662,7 @@ int main(int argc, const char *argv[])
             // calculate horizontal path
             dir = (e_x > s_x) ? 1 : -1;
             for ( col = s_x + dir; col != e_x; col += dir){
-              tempMax = calculatePath(&ref_board[w], s_x, s_y, e_x, e_y,2, col, s_y, col , e_y);
+              tempMax = calculatePath(costs, s_x, s_y, e_x, e_y,2, col, s_y, col , e_y, w);
               if(tempMax.m < localMax.m && tempMax.aggr_max < localMax.aggr_max){
                 localMax.m = tempMax.m;
                 localMax.aggr_max = tempMax.aggr_max;
@@ -665,7 +676,7 @@ int main(int argc, const char *argv[])
             // calculate vertical path
             dir = (e_y > s_y) ? 1 : -1;
             for(row = s_y + dir; row != e_y; row += dir){
-              tempMax = calculatePath(&ref_board[w], s_x, s_y, e_x, e_y, 2, s_x, row, e_x, row);
+              tempMax = calculatePath(costs, s_x, s_y, e_x, e_y, 2, s_x, row, e_x, row, w);
               if(tempMax.m < localMax.m && tempMax.aggr_max < localMax.aggr_max){
                 localMax.m = tempMax.m;
                 localMax.aggr_max = tempMax.aggr_max;
@@ -699,6 +710,7 @@ int main(int argc, const char *argv[])
     for( y = 0; y < dim_y; y++){
       for( x = 0; x < dim_x; x++){
         B[y*dim_y + x].val = 0;
+        B[y*dim_y + x].wire = 0;  // clean up board
       }
     }
     /*  layout final result board  */
@@ -716,13 +728,13 @@ int main(int argc, const char *argv[])
       switch (mypath->numBends) {
         case 0:
           if (s_y == e_y){ // Horizontal path
-            horizontalCost(B, s_y, s_x, e_x, dim_y);
-            incrCell(B, e_x, e_y, dim_y);
+            horizontalCost(B, s_y, s_x, e_x, dim_y, j);
+            incrCell(B, e_x, e_y, dim_y, j);
             break;
           }
           if (s_x == e_x){            // Vertical path
-            verticalCost(B, e_x, s_y, e_y, dim_y);
-            incrCell(B, e_x, e_y, dim_y);
+            verticalCost(B, e_x, s_y, e_y, dim_y, j);
+            incrCell(B, e_x, e_y, dim_y, j);
             break;
           }
         case 1:
@@ -730,18 +742,18 @@ int main(int argc, const char *argv[])
           b1_y = mypath->bends[1]; // Get bend coordinate
           if (s_y == b1_y) // Before bend is horizontal
           {
-            horizontalCost(B, s_y, s_x, b1_x, dim_y);
+            horizontalCost(B, s_y, s_x, b1_x, dim_y, j);
             // After bend must be vertical
-            verticalCost(B, e_x, b1_y, e_y, dim_y);
-            incrCell(B, e_x, e_y, dim_y);
+            verticalCost(B, e_x, b1_y, e_y, dim_y, j);
+            incrCell(B, e_x, e_y, dim_y, j);
             break;
           }
           if (s_x == b1_x)           // Before bend is vertical
           {
-            verticalCost(B, s_x, s_y, b1_y, dim_y);
+            verticalCost(B, s_x, s_y, b1_y, dim_y, j);
             // After bend must be horizontal
-            horizontalCost(B, e_y, b1_x, e_x, dim_y);
-            incrCell(B, e_x, e_y, dim_y);
+            horizontalCost(B, e_y, b1_x, e_x, dim_y, j);
+            incrCell(B, e_x, e_y, dim_y, j);
             break;
           }
         case 2:
@@ -752,18 +764,18 @@ int main(int argc, const char *argv[])
           // Exam first bend
           if (s_y == b1_y) // Before bend is horizontal
           {
-            horizontalCost(B, s_y, s_x, b1_x, dim_y);
-            verticalCost(B, b1_x, b1_y, b2_y, dim_y);//after bend is vertical
-            horizontalCost(B, e_y, b2_x, e_x,dim_y);
-            incrCell(B, e_x, e_y, dim_y);
+            horizontalCost(B, s_y, s_x, b1_x, dim_y, j);
+            verticalCost(B, b1_x, b1_y, b2_y, dim_y, j);//after bend is vertical
+            horizontalCost(B, e_y, b2_x, e_x,dim_y, j);
+            incrCell(B, e_x, e_y, dim_y, j);
             break;
           }
           if (s_x == b1_x) // Before bend is vertical
           {
-            verticalCost(B, s_x, s_y, b1_y, dim_y);
-            horizontalCost(B, b1_y, b1_x, b2_x, dim_y);//after bend is horizontal
-            verticalCost(B, b2_x, b2_y, e_y, dim_y);
-            incrCell(B, e_x, e_y, dim_y);
+            verticalCost(B, s_x, s_y, b1_y, dim_y, j);
+            horizontalCost(B, b1_y, b1_x, b2_x, dim_y, j);//after bend is horizontal
+            verticalCost(B, b2_x, b2_y, e_y, dim_y, j);
+            incrCell(B, e_x, e_y, dim_y, j);
             break;
           }
       }

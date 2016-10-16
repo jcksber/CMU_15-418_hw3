@@ -7,7 +7,7 @@
 #define __WIREOPT_H__
 
 #include <omp.h>
-
+#define WIRE_MAX 20
 /* value_t struct is used to calculate the local minimum path
  */
 typedef struct{
@@ -41,6 +41,8 @@ typedef struct
  */
 typedef struct
 {
+  int wire;
+  int list[WIRE_MAX];
 	omp_lock_t lock;
 	int val;
 } cost_cell_t;
@@ -66,18 +68,18 @@ int get_option_int(const char *option_name, int default_value);
 float get_option_float(const char *option_name, float default_value);
 
 /* Our helper functions */
-void horizontalCost(cost_cell_t *C, int row, int startX, int endX, int dimY);
-void verticalCost(cost_cell_t *C, int xCoord, int startY, int endY, int dimY);
+void horizontalCost(cost_cell_t *C, int row, int startX, int endX, int dimY, int wire_n);
+void verticalCost(cost_cell_t *C, int xCoord, int startY, int endY, int dimY, int wire_n);
 void new_rand_path(wire_t *wire);
-void incrCell(cost_cell_t *C, int x, int y, int dimY);
+void incrCell(cost_cell_t *C, int x, int y, int dimY, int wire_n);
 void updateBoard(cost_t* board);
-inline int readBoard(cost_t* board, int x, int y);
-value_t readVertical(cost_t* board, int x, int s_y, int e_y);
-value_t readHorizontal(cost_t* board, int y, int s_x, int e_x);
+inline int readBoard(cost_t* board, int x, int y, int wire_n);
+value_t readVertical(cost_t* board, int x, int s_y, int e_y, int wire_n);
+value_t readHorizontal(cost_t* board, int y, int s_x, int e_x, int wire_n);
 value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
-          int numBends, int b1_x, int b1_y, int b2_x, int b2_y);
+          int numBends, int b1_x, int b1_y, int b2_x, int b2_y, int wire_n);
 value_t combineValue(value_t v1, value_t v2);
-void cleanUpWire( cost_t board, path_t * path);
-inline void decrValue(cost_t board, int x, int y);
-void copyBoard(cost_cell_t *dest, cost_cell_t *src, int dimX, int dimY);
+//void cleanUpWire( cost_t board, path_t * path);
+//inline void decrValue(cost_t board, int x, int y);
+//void copyBoard(cost_cell_t *dest, cost_cell_t *src, int dimX, int dimY);
 #endif

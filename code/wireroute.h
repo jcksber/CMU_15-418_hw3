@@ -7,8 +7,13 @@
 #define __WIREOPT_H__
 
 #include <omp.h>
-#include <stdioh>
-#include <stdlib.h>
+#define WIRE_MAX 20
+/* value_t struct is used to calculate the local minimum path
+ */
+typedef struct{
+  int aggr_max;
+  int m;
+} value_t;
 
 /* Path struct - describe a single wire
  * Defined by start & end points and
@@ -36,7 +41,9 @@ typedef struct
  */
 typedef struct
 {
-	omp_lock_t* lock;
+  int wire;
+  int list[WIRE_MAX];
+	omp_lock_t lock;
 	int val;
 } cost_cell_t;
 
@@ -46,8 +53,12 @@ typedef struct
  */
 typedef struct
 {
+  int dimX;
+  int dimY;
   int prevMax;
   int prevAggrTotal;
+  int currentMax;
+  int currentAggrTotal;
   cost_cell_t* board;
 } cost_t;
 
@@ -57,10 +68,18 @@ int get_option_int(const char *option_name, int default_value);
 float get_option_float(const char *option_name, float default_value);
 
 /* Our helper functions */
-void init_wires(FILE *input, wire_t *batch, int numWires);
-void init_cost_array(cost_t *arr, int numWires, int cols, int rows);
+void horizontalCost(cost_cell_t *C, int row, int startX, int endX, int dimY, int wire_n);
+void verticalCost(cost_cell_t *C, int xCoord, int startY, int endY, int dimY, int wire_n);
 void new_rand_path(wire_t *wire);
-void horizontal_cost(cost_cell_t *C, int row, int startX, int endX);
-void vertical_cost(cost_cell_t *C, int row, int xCoord, int startY, int endY, int dimY);
-
+void incrCell(cost_cell_t *C, int x, int y, int dimY, int wire_n);
+void updateBoard(cost_t* board);
+inline int readBoard(cost_t* board, int x, int y, int wire_n);
+value_t readVertical(cost_t* board, int x, int s_y, int e_y, int wire_n);
+value_t readHorizontal(cost_t* board, int y, int s_x, int e_x, int wire_n);
+value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
+          int numBends, int b1_x, int b1_y, int b2_x, int b2_y, int wire_n);
+value_t combineValue(value_t v1, value_t v2);
+//void cleanUpWire( cost_t board, path_t * path);
+//inline void decrValue(cost_t board, int x, int y);
+//void copyBoard(cost_cell_t *dest, cost_cell_t *src, int dimX, int dimY);
 #endif

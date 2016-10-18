@@ -7,8 +7,9 @@
 #define __WIREOPT_H__
 
 #include <omp.h>
-#define WIRE_MAX 20
+#define WIRE_MAX 20  // Max number of wires in a single cell
 /* value_t struct is used to calculate the local minimum path
+ * It's a struct that can return from a function call
  */
 typedef struct{
   int aggr_max;
@@ -36,8 +37,9 @@ typedef struct
 	path_t *prevPath;
 } wire_t;
 
-/* cost_cell_t *
- * Just an integer, but with a lock for cost array writes per cell
+/* cost_cell_t is the individual cell of the cost board
+ * It has record of existing wires that has lay on it and a cell
+ * level lock
  */
 typedef struct
 {
@@ -50,6 +52,7 @@ typedef struct
 /* cost_t *
  * the struct defines the board;
  * contains both the previous record and the current board
+ * previous record and current record is used later in comparison
  */
 typedef struct
 {
@@ -79,7 +82,4 @@ value_t readHorizontal(cost_t* board, int y, int s_x, int e_x, int wire_n);
 value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
           int numBends, int b1_x, int b1_y, int b2_x, int b2_y, int wire_n);
 value_t combineValue(value_t v1, value_t v2);
-//void cleanUpWire( cost_t board, path_t * path);
-//inline void decrValue(cost_t board, int x, int y);
-//void copyBoard(cost_cell_t *dest, cost_cell_t *src, int dimX, int dimY);
 #endif

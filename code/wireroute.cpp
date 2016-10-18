@@ -303,89 +303,6 @@ value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
   }
   return result;
 }
-/*
-void cleanUpWire(cost_t board, path_t *path){
-  int s_x, s_y, e_x, e_y, dirx, diry;
-  int b1_x, b1_y, b2_x, b2_y;
-  s_x = path->bounds[0];
-  s_y = path->bounds[1];
-  e_x = path->bounds[2];
-  e_y = path->bounds[3];
-  b1_x = path->bends[0];
-  b1_y = path->bends[1];
-  b2_x = path->bends[2];
-  b2_y = path->bends[3];
-  dirx = (s_x < e_x )? 1: -1;
-  diry = (s_y < e_y )? 1: -1;
-  switch (path->numBends){
-    case 0:
-      if (s_y == e_y){ // Horizontal path
-        for(int i = s_x; i != e_x; i += dirx){
-          decrValue(board, i, e_y);
-        }
-        break;
-      }
-      if (s_x == e_x){            // Vertical path
-        for(int i = s_y; i != e_y; i += diry)
-          decrValue(board, e_x, i);
-        break;
-      }
-    case 1:
-      if (s_y == b1_y) // Before bend is horizontal
-      {
-        for( int i = s_x; i != b1_x; i += dirx)
-          decrValue(board, i, s_y);
-            // After bend must be vertical
-        for( int i = b1_y; i != e_y; i += diry)
-          decrValue(board, e_x, i);
-        break;
-      }
-      if (s_x == b1_x)           // Before bend is vertical
-      {
-        for( int i = s_y; i != b1_y; i += diry)
-          decrValue(board, s_x, i);
-            // After bend must be vertical
-        for( int i = b1_x; i != e_x; i += dirx)
-          decrValue(board, i, e_y);
-        break;
-      }
-    case 2:
-      if (s_y == b1_y) // Before bend is horizontal
-      {
-        for( int i = s_x; i != b1_x; i += dirx)
-          decrValue(board, i, s_y);
-        for( int i = b1_y; i != b2_y; i += diry)
-          decrValue(board, b1_x,i);
-        for( int i = b2_x; i != e_x; i+= dirx)
-          decrValue(board, i, e_y);
-        break;
-      }
-      if (s_x == b1_x) // Before bend is vertical
-      {
-        for( int i = s_y; i != b1_y; i += diry)
-          decrValue(board, s_x, i);
-        for( int i = b1_x; i != b2_x; i += dirx)
-          decrValue(board, i, b1_y);
-        for( int i = b2_y; i != e_y; i+= diry)
-          decrValue(board, b2_x, i);
-        break;
-      }
-  }
-  decrValue(board, e_x, e_y);
-}
-
-inline void decrValue(cost_t board, int x, int y){
-  board.board[board.dimY * y + x].val -= 1;
-}
-
-void copyBoard(cost_cell_t *dest, cost_cell_t *src, int dimX, int dimY){
-  for ( int r = 0; r < dimY; r++){
-    for ( int c = 0; c < dimX; c++){
-      dest[r*dimY + c].val = src[r*dimY + c].val;
-    }
-  }
-}
-*/
 ///////////////////////////////////////////////////////////
 // MAIN ROUTINE
 ///////////////////////////////////////////////////////////
@@ -492,17 +409,6 @@ int main(int argc, const char *argv[])
   /* This pragma means we want the code in the following block be executed in
    * Xeon Phi.
    */
-   // ALGO
-    // 1. With probability 1 - P, choose the current min path.  Otherwise, choose a
-    //    a path uniformly at random from the space of delt_x + delt_y possible routes.
-    // 2. Calculate cost of current path, if not known. This is the current min path.
-    // 3. Consider all paths which first travel horizontally.
-    //    If any costs less than the current min path, that is the new min path.
-    // 4. Same as (2), using vertical paths.
-
-    // Idea for later ?? Split up work of updating cost array by cells versus by wires
-    //                   Structure to store "no touch points" (i.e. pt's with higher costs)??
-    //                   Sort path points before updating cost array --> LOCALITY
 #pragma offload target(mic) \
   inout(wires: length(num_of_wires) INOUT)    \
   inout(costs: length(dim_x*dim_y) INOUT)
@@ -604,16 +510,6 @@ int main(int argc, const char *argv[])
             }
         }
       } /* implicit barrier */
-      /* Save temp board for calculation
-      #pragma omp parallel for default(shared) \
-        private(w) shared(ref_board, wires, B) schedule(dynamic)
-      for( w = 0 ; w < num_of_wires; w++){
-        // copyBoard(ref_board[w].board, B, dim_x, dim_y);
-        // clean up current wire
-        //cleanUpWire(ref_board[w], wires[w].currentPath);
-      }
-      printf("finish cleanup \n");
-    */
       /* Parallel by wire, determine NEW path */
       #pragma omp parallel for default(shared)       \
           private(w,row, col,  mypath, localMax, tempMax, s_x, s_y, e_x, e_y, b1_x, b2_x, \
@@ -623,7 +519,6 @@ int main(int argc, const char *argv[])
         // With probability 1 - P, choose the current min path.
         srand(time(NULL));
         if((rand()%100) > int(SA_prob*100)){ // xx% chance pick the complicated  algo
-          //printf("Running Complicated Path Generating Algo %d %d  \n", rand() %100, int(SA_prob*100));
           mypath = wires[w].currentPath;
           s_x = mypath->bounds[0];   // (start point)
           s_y = mypath->bounds[1];

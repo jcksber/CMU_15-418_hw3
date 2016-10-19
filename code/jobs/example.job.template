@@ -11,9 +11,9 @@ cd $SCRATCH
 APP_NAME=wireroute # CHANGE THIS TO THE NAME OF YOUR PROGRAM
 
 # Set this to the important directory.
-execdir=PROGDIR # The directory that contains your wire routing program
-exe=$APP_NAME # The name of your wire routing program
-input=INPUT # The name of the input file
+execdir=~/private/15418/HW3/code # The directory that contains your wire routing program
+exe=$wireroute # The name of your wire routing program
+input=~/private/15418/HW3/code/input/testinput/hard_1024.text # The name of the input file
 args="-f INPUT -n THREADS"
 inputdir=$execdir/inputs/timeinput # The directory for test cases
 

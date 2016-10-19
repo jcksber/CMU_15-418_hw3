@@ -65,33 +65,40 @@ static void show_help(const char *program_path)
  * 50% change pick x traversal  50% chance pick y traversal
  * random generate bends
  */
-void new_rand_path(wire_t *wire){
-  //overwrite previous path
-  srand(time(NULL));
-  int bend = 0;
+void new_rand_path(wire_t *wire)
+{
+  // LOCAL VARIABLE DECLARATIONS
+  int bend, s_x, s_y, e_x, e_y, dy, yp, dx, xp, ran;
+
+  srand(time(NULL)); //overwrite old path
+  bend = 0;
   std::memcpy(wire->prevPath, wire->currentPath, sizeof(wire_t));
-  int s_x, s_y, e_x, e_y, dy, yp, dx, xp;
   s_x = wire->currentPath->bounds[0];
   s_y = wire->currentPath->bounds[1];
   e_x = wire->currentPath->bounds[2];
   e_y = wire->currentPath->bounds[3];
-  if (s_x == e_x || s_y == e_y){
+
+  // CASE OF SINGLE BEND
+  if (s_x == e_x || s_y == e_y)
+  {
     wire->currentPath->numBends = bend;
     return;
   }
-  // not in` the same line, need at least one bend
+  // CASE OF MORE THAN ONE BEND
   bend +=1;
   dy = abs(e_y - s_y);
   dx = abs(e_x - s_x);
-  // calculate random point on y axis
-  if ((rand() % 10)> 5){
-    // y first
-    int ran_y = rand() % dy;
-    if (ran_y == 0) ran_y = 1; // need to make progress
-    if(s_y > e_y)  yp = s_y - ran_y;
-    else yp = s_y + ran_y;
+  // Calculate random point on y axis
+  if ((rand() % 10)> 5) // y first
+  {
+    ran = rand() % dy;
+    if (ran == 0) ran = 1; // need to make progress
+    if(s_y > e_y)  yp = s_y - ran;
+    else yp = s_y + ran;
+
     // determind bends
     if(e_y != yp) bend +=1;
+
     // overwrite
     wire->currentPath->bends[0] = s_x;
     wire->currentPath->bends[1] = yp;
@@ -99,14 +106,16 @@ void new_rand_path(wire_t *wire){
     wire->currentPath->bends[3] = yp;
     wire->currentPath->numBends = bend;
   }
-  else{
-    // x first traversal
-    int ran_x = rand() % dx;
-    if (ran_x == 0) ran_x = 1;
-    if(s_x > e_x)  xp = s_x - ran_x;
-    else xp = s_x + ran_x;
+  else // x first
+  {
+    ran = rand() % dx;
+    if (ran == 0) ran = 1;
+    if(s_x > e_x)  xp = s_x - ran;
+    else xp = s_x + ran;
+
     // determind bends
     if(e_x != xp) bend +=1;
+
     // overwrite
     wire->currentPath->bends[0] = xp;
     wire->currentPath->bends[1] = s_y;
@@ -120,10 +129,14 @@ void new_rand_path(wire_t *wire){
  * Update cost array for horizontal traversal
  * Input: ptr to board, y coord, starting x, ending x, dim_y
  */
-void horizontalCost(cost_cell_t *C, int row, int startX, int endX, int dimY, int wire_n){
-  int s_x = startX;
-  // Determine path direction
-  int dir = startX > endX ? -1 : 1;
+void horizontalCost(cost_cell_t *C, int row, int startX, int endX, int dimY, int wire_n)
+{
+  // LOCAL VARIABLE DECLARATIONS
+  int s_x, dir;
+
+  s_x = startX;
+  dir = startX > endX ? -1 : 1; //determine path direction
+
   /* Update cost array for given wire */
   while (s_x != endX){
     /*### UPDATING CELL: CRITICAL REGION ###*/
@@ -137,10 +150,14 @@ void horizontalCost(cost_cell_t *C, int row, int startX, int endX, int dimY, int
  * Update cost array for vertical traversal
  * Input: ptr to board, x coord, starting y, ending y, dim_y
  */
-void verticalCost(cost_cell_t *C, int xCoord, int startY, int endY, int dimY, int wire_n){
-  int s_y = startY;
-  // Determine path direction
-  int dir = startY > endY ? -1 : 1;
+void verticalCost(cost_cell_t *C, int xCoord, int startY, int endY, int dimY, int wire_n)
+{
+  // LOCAL VARIABLE DECLARATIONS
+  int s_y, dir;
+
+  s_y = startY;
+  dir = startY > endY ? -1 : 1; //determine path direction
+
   /* Update cost array for given wire */
   while (s_y != endY){
     /*### UPDATING CELL: CRITICAL REGION ###*/
@@ -150,59 +167,86 @@ void verticalCost(cost_cell_t *C, int xCoord, int startY, int endY, int dimY, in
   }
 }
 
-// Use cell level lock to safely incre value by 1
-// INPUT: ptr to board, x coord , y coord, dim_y
-void incrCell(cost_cell_t *C, int x, int y, int dimY, int wire_n){
+/* incrCell *
+ * Use cell level lock to safely incre value by 1
+ */
+void incrCell(cost_cell_t *C, int x, int y, int dimY, int wire_n)
+{
   cost_cell_t *c;
   c = &C[y*dimY + x]; // calculate the idx in board
+
   omp_set_lock(&c->lock);
-    c->val +=1;
-    if(c->wire < WIRE_MAX){
-      c->list[c->wire] = wire_n;
-      c->wire += 1;
-    }
+  c->val +=1;
+  if(c->wire < WIRE_MAX)
+  {
+    c->list[c->wire] = wire_n;
+    c->wire += 1;
+  }
   omp_unset_lock(&c->lock);
 }
 
-/* use to run board statistic  */
-void updateBoard(cost_t *board){
+/* updateBoard *
+ * Calculate the number of layers & aggregate cost of board
+ */
+void updateBoard(cost_t *board)
+{
+  // LOCAL VARIABLE DECLARATIONS
+  int max, total, row, col, val;
+
   // overwrite the previous data
   board->prevMax = board->currentMax;
   board->prevAggrTotal = board->currentAggrTotal;
-  int Max = 0;
-  int Total = 0;
-  // traversal to count the board
-  for (int row = 0; row < board->dimY; row++){
-    for (int col = 0;  col < board->dimX; col++){
-      int val = board->board[row* board->dimY + col].val;
-      if(val > Max) Max = val;
-      if(val > 1) Total += val;
+
+  max = 0;  //loop setup
+  total = 0;
+  // Traverse board & count costs
+  for (row = 0; row < board->dimY; row++)
+  {
+    for (col = 0;  col < board->dimX; col++)
+    {
+      val = board->board[row* board->dimY + col].val;
+      if(val > max) max = val;
+      if(val > 1) total += val;
     }
   }
-  board->currentMax = Max;
-  board->currentAggrTotal = Total;
+  // Finally, update global board with counted values
+  board->currentMax = max;
+  board->currentAggrTotal = total;
 }
 
-// read a value in the board
-inline int readBoard(cost_t *board, int x, int y, int wire_n){
+/* readBoard *
+ * Read accurate cost of board cell
+ */
+inline int readBoard(cost_t *board, int x, int y, int wire_n)
+{
+  // LOCAL VARIABLE DECLARATIONS
+  int count;
   cost_cell_t *c;
   c = &board->board[y*board->dimY + x];
-  for (int count = 0; count < c->wire; count++){
+  for (count = 0; count < c->wire; count++){
     if(wire_n == c->list[count])
       return c->val-1;
   }
   return c->val;
 }
 
-// get vertical cell values
-value_t readVertical(cost_t* board, int x, int s_y, int e_y, int wire_n){
+/* readVertical *
+ * Read cost of given vertical path
+ */
+value_t readVertical(cost_t* board, int x, int s_y, int e_y, int wire_n)
+{
+  // LOCAL VARIABLE DECLARATIONS
   value_t result;
+  int dir, c, val;
+
   result.aggr_max = 0;
   result.m = 0;
-  int dir = s_y > e_y ? -1:1;
-  int c = s_y;
-  while(c != e_y){
-    int val = readBoard(board,x,c, wire_n);
+  dir = s_y > e_y ? -1:1;
+  c = s_y;
+
+  while(c != e_y)
+  {
+    val = readBoard(board,x,c, wire_n);
     if(result.m < val) result.m = val;
     if(val > 1) result.aggr_max += val;
     c += dir;
@@ -210,15 +254,23 @@ value_t readVertical(cost_t* board, int x, int s_y, int e_y, int wire_n){
   return result;
 }
 
-// get horizontal cell values
-value_t readHorizontal(cost_t* board, int y, int s_x, int e_x, int wire_n){
+/* readHorizontal *
+ * Read cost of given horizontal path
+ */
+value_t readHorizontal(cost_t* board, int y, int s_x, int e_x, int wire_n)
+{
+  // LOCAL VARIABLE DECLARATIONS
   value_t result;
+  int dir, c, val;
+
   result.aggr_max = 0;
   result.m = 0;
-  int dir = s_x > e_x ? -1:1;
-  int c = s_x;
-  while(c != e_x){
-    int val = readBoard(board,c,y, wire_n);
+  dir = s_x > e_x ? -1:1;
+  c = s_x;
+
+  while(c != e_x)
+  {
+    val = readBoard(board,c,y, wire_n);
     if(result.m < val) result.m = val;
     if(val > 1) result.aggr_max += val;
     c += dir;
@@ -226,32 +278,45 @@ value_t readHorizontal(cost_t* board, int y, int s_x, int e_x, int wire_n){
   return result;
 }
 
-// combine to value_t into one
-value_t combineValue( value_t v1, value_t v2){
+/* combineValue *
+ * Faster way of combining cost structures
+ */
+value_t combineValue( value_t v1, value_t v2)
+{
   value_t ret;
+
   ret.aggr_max = v1.aggr_max + v2.aggr_max;
   ret.m = (v1.m > v2.m) ? v1.m : v2.m;
   return ret;
 }
 
-/////// board cost calculation
+/* calculatePath *
+ * Calculate cost of board
+ */
 value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
-          int numBends, int b1_x, int b1_y, int b2_x, int b2_y, int wire_n){
+          int numBends, int b1_x, int b1_y, int b2_x, int b2_y, int wire_n)
+{
+  // LOCAL VARIABLE DECLARATIONS
   value_t result, temp, temp1, temp2;
-  int tmp_val = readBoard(board, e_x, e_y, wire_n);
+  int tmp_val;
+
+  tmp_val = readBoard(board, e_x, e_y, wire_n);
   result.aggr_max = 0;
   result.m = 0;
+
   // Follow path & update cost array
   switch (numBends) {
     case 0:
-      if (s_y == e_y){ // Horizontal path
+      if (s_y == e_y)
+      { // Horizontal path
         temp = readHorizontal(board, s_y, s_x, e_x,wire_n);
         if (tmp_val > 1) result.aggr_max = temp.aggr_max + tmp_val;
         else result.aggr_max = temp.aggr_max;
         result.m = (temp.m > tmp_val) ? temp.m : tmp_val;
         break;
       }
-      if (s_x == e_x){            // Vertical path
+      if (s_x == e_x)
+      { // Vertical path
         temp = readVertical(board, s_x, s_y, e_y,wire_n);
         if (tmp_val > 1) result.aggr_max = temp.aggr_max + tmp_val;
         else result.aggr_max = temp.aggr_max;
@@ -259,41 +324,41 @@ value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
         break;
       }
     case 1:
-      if (s_y == b1_y) // Before bend is horizontal
-      {
+      if (s_y == b1_y)
+      { // Before bend is horizontal (vertical must follow)
         temp1 = combineValue(readHorizontal(board, s_y, s_x, b1_x,wire_n),
-            // After bend must be vertical
-            readVertical(board, e_x, b1_y, e_y,wire_n));
+        readVertical(board, e_x, b1_y, e_y,wire_n));
+
         if (tmp_val > 1) result.aggr_max = temp1.aggr_max + tmp_val;
         else result.aggr_max = temp1.aggr_max;
         result.m = (temp1.m > tmp_val) ? temp1.m : tmp_val;
         break;
       }
-      if (s_x == b1_x)           // Before bend is vertical
-      {
+      if (s_x == b1_x)
+      { // Before bend is vertical (horizontal must follow)
         temp1 = combineValue(readVertical(board, s_x, s_y, b1_y,wire_n),
-            // After bend must be horizontal
-              readHorizontal(board, e_y, b1_x, e_x,wire_n));
+        readHorizontal(board, e_y, b1_x, e_x,wire_n));
+
         if (tmp_val > 1) result.aggr_max = temp1.aggr_max + tmp_val;
         else result.aggr_max = temp1.aggr_max;
         result.m = (temp1.m > tmp_val) ? temp1.m : tmp_val;
         break;
       }
     case 2:
-      if (s_y == b1_y) // Before bend is horizontal
-      {
+      if (s_y == b1_y)
+      { // Before bend is horizontal (after must be vertical)
         temp = combineValue(readHorizontal(board, s_y, s_x, b1_x,wire_n),
-                readVertical(board, b1_x, b1_y, b2_y,wire_n));//after bend is vertical
+                readVertical(board, b1_x, b1_y, b2_y,wire_n));
         temp2 = combineValue(temp, readHorizontal(board, e_y, b2_x, e_x,wire_n));
         if (tmp_val > 1) result.aggr_max = temp2.aggr_max + tmp_val;
         else result.aggr_max = temp2.aggr_max;
         result.m = (temp2.m > tmp_val) ? temp2.m : tmp_val;
         break;
       }
-      if (s_x == b1_x) // Before bend is vertical
-      {
+      if (s_x == b1_x)
+      { // Before bend is vertical (after must be horizontal)
         temp = combineValue(readVertical(board, s_x, s_y, b1_y,wire_n),
-            readHorizontal(board, b1_y, b1_x, b2_x,wire_n));//after bend is horizontal
+            readHorizontal(board, b1_y, b1_x, b2_x,wire_n));
         temp2 = combineValue(temp, readVertical(board, b2_x, b2_y, e_y,wire_n));
         if (tmp_val > 1) result.aggr_max = temp2.aggr_max + tmp_val;
         else result.aggr_max = temp2.aggr_max;
@@ -303,6 +368,8 @@ value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
   }
   return result;
 }
+
+
 ///////////////////////////////////////////////////////////
 // MAIN ROUTINE
 ///////////////////////////////////////////////////////////

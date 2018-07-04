@@ -1,4 +1,12 @@
-# Directory structure
+#### ParaGraph: A Parallel Graph Library
+###[Modified: July 4, 2018 07:19 CDT]
+## Overview
+Designed a simple C++ framework making it simple to create high-performance, parallel implementations of a number of graph processing algorithms.
+## Resources
+# Carnegie Mellon Staff & Students
+# 59 cores of an Intel Xeon Phi processor
+
+## Directory structure
 ├── code
 │   ├── inputs
 │   │   ├── problemsize
@@ -43,6 +51,7 @@
     └── openmp.pdf
         OpenMP tutorial
 
+## Dev Notes from start of project
 # Get started
 0. Read handout
 1. Read README

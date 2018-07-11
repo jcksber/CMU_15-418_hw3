@@ -98,11 +98,10 @@ Format: ![Fig. 3: Wire routing example paired with the corresponding cost array]
 7. Submit to latedays queue for performance testing
 8. Answer questions on the handout
 
-
-# When to submit to latedays
+### When to submit to latedays
 We suggest you to develop and debug your program without submitting jobs to the job queue in latedays. ``make cpu'' will generate the code runnable on machines that has OpenMP installed. If you log into latedays.andrew.cmu.edu, you'll be able to run the program compiled from ``make cpu''.
 
-# How to generate and submit jobs to latedays?
+### How to generate and submit jobs to latedays?
 0. Change the APP_NAME in jobs/example.job.template to the name of your binary wire routing program
 1. Change the inputdir in jobs/example.job.template to the directory of input file.
 2. Change the $threads and $inputs in jobs/batch_generate.sh to the values you want, these are thread and input arguments feed to your wire routing program.

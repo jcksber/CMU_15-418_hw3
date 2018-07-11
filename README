@@ -1,4 +1,5 @@
 #### ParaGraph: A Parallel Graph Library
+### Created: October, 2016
 ###[Modified: July 4, 2018 07:19 CDT]
 ## Overview
 Designed a simple C++ framework making it simple to create high-performance, parallel implementations of a number of graph processing algorithms.

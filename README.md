@@ -12,6 +12,10 @@ we used OpenMP to parallelize our Manhattan-style routes algorithm to produce th
 
 `: In this exercise, an "optimal" solution is one where the fewest possible wire intersections occur for the given wires & grid.
 
+## Resources
+* Carnegie Mellon Staff & Students
+* 59 cores of an Intel Xeon Phi processor
+
 ## Programming Task: Parallel VLSI Wire Routing
 Input files given in the following format:
 
@@ -35,9 +39,18 @@ Here's an example of what a potential snapshot of wire routes grid and its corre
 ![Figure 3: Example of a potential wire routing](./fig3.png)
 Format: ![Fig. 3: Wire routing example paired with the corresponding cost array](url)
 
-## Resources
-* Carnegie Mellon Staff & Students
-* 59 cores of an Intel Xeon Phi processor
+## Algorithmic Approach: Simplified Simulated Annealing
+1. With probability 1 - P, choose the current min path.  Otherwise, choose a
+a path uniformly at random from the space of delt_x + delt_y possible routes.
+1. Calculate cost of current path, if not known. This is the current min path.
+1. Consider all paths which first travel horizontally.
+If any costs less than the current min path, that is the new min path.
+1. Same as (2), using vertical paths.
+
+Idea for later ?? Split up work of updating cost array by cells versus by wires
+                  Structure to store "no touch points" (i.e. pt's with higher costs)??
+                  Sort path points before updating cost array --> LOCALITY
+		  
 
 ## Directory structure
 ├── code

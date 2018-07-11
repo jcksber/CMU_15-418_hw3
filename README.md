@@ -1,5 +1,5 @@
 # Parallel Computer Architecture & Programming (15-418)
-##### # Carngie Mellon University
+###### Carngie Mellon University
 
 # Assignment 3: Parallel VLSI Wire Routing via OpenMP
 ## Authors: Jack Kasbeer, Qifang (Charlie) Cai

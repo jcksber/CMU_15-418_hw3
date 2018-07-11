@@ -1,7 +1,7 @@
+# Carngie Mellon University
 # Parallel Computer Architecture & Programming (15-418)
-### Assignment provided by Carnegie Mellon University, School of Computer Science
 
-# Parallel VLSI Wire Routing via OpenMP
+# Assignment 3: Parallel VLSI Wire Routing via OpenMP
 ## Authors: Jack Kasbeer, Qifang (Charlie) Cai
 ### Created: October, 2016
 ### [Modified: July 4, 2018 07:19 CDT]
@@ -85,9 +85,9 @@ Format: ![Fig. 3: Wire routing example paired with the corresponding cost array]
         OpenMP tutorial
 
 
-### Progress Notes & Course Info. Provided
-## Dev Notes from start of project
-# Get started
+# Progress Notes & Course Info. Provided
+## Get started
+#### Dev Notes from start of project
 0. Read handout
 1. Read README
 2. Read wireroute.cpp and wireroute.h including comments

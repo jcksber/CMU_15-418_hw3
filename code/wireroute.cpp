@@ -342,94 +342,15 @@ value_t calculatePath(cost_t* board, int s_x, int s_y, int e_x, int e_y,
   }
   return result;
 }
-/*
-void cleanUpWire(cost_t board, path_t *path){
-  int s_x, s_y, e_x, e_y, dirx, diry;
-  int b1_x, b1_y, b2_x, b2_y;
-  s_x = path->bounds[0];
-  s_y = path->bounds[1];
-  e_x = path->bounds[2];
-  e_y = path->bounds[3];
-  b1_x = path->bends[0];
-  b1_y = path->bends[1];
-  b2_x = path->bends[2];
-  b2_y = path->bends[3];
-  dirx = (s_x < e_x )? 1: -1;
-  diry = (s_y < e_y )? 1: -1;
-  switch (path->numBends){
-    case 0:
-      if (s_y == e_y){ // Horizontal path
-        for(int i = s_x; i != e_x; i += dirx){
-          decrValue(board, i, e_y);
-        }
-        break;
-      }
-      if (s_x == e_x){            // Vertical path
-        for(int i = s_y; i != e_y; i += diry)
-          decrValue(board, e_x, i);
-        break;
-      }
-    case 1:
-      if (s_y == b1_y) // Before bend is horizontal
-      {
-        for( int i = s_x; i != b1_x; i += dirx)
-          decrValue(board, i, s_y);
-            // After bend must be vertical
-        for( int i = b1_y; i != e_y; i += diry)
-          decrValue(board, e_x, i);
-        break;
-      }
-      if (s_x == b1_x)           // Before bend is vertical
-      {
-        for( int i = s_y; i != b1_y; i += diry)
-          decrValue(board, s_x, i);
-            // After bend must be vertical
-        for( int i = b1_x; i != e_x; i += dirx)
-          decrValue(board, i, e_y);
-        break;
-      }
-    case 2:
-      if (s_y == b1_y) // Before bend is horizontal
-      {
-        for( int i = s_x; i != b1_x; i += dirx)
-          decrValue(board, i, s_y);
-        for( int i = b1_y; i != b2_y; i += diry)
-          decrValue(board, b1_x,i);
-        for( int i = b2_x; i != e_x; i+= dirx)
-          decrValue(board, i, e_y);
-        break;
-      }
-      if (s_x == b1_x) // Before bend is vertical
-      {
-        for( int i = s_y; i != b1_y; i += diry)
-          decrValue(board, s_x, i);
-        for( int i = b1_x; i != b2_x; i += dirx)
-          decrValue(board, i, b1_y);
-        for( int i = b2_y; i != e_y; i+= diry)
-          decrValue(board, b2_x, i);
-        break;
-      }
-  }
-  decrValue(board, e_x, e_y);
-}
 
-inline void decrValue(cost_t board, int x, int y){
-  board.board[board.dimY * y + x].val -= 1;
-}
 
-void copyBoard(cost_cell_t *dest, cost_cell_t *src, int dimX, int dimY){
-  for ( int r = 0; r < dimY; r++){
-    for ( int c = 0; c < dimX; c++){
-      dest[r*dimY + c].val = src[r*dimY + c].val;
-    }
-  }
-}
-*/
 ///////////////////////////////////////////////////////////
 // MAIN ROUTINE
 ///////////////////////////////////////////////////////////
+
 int main(int argc, const char *argv[])
 {
+  /* Setup, init, and user error checks */
   using namespace std::chrono;
   typedef std::chrono::high_resolution_clock Clock;
   typedef std::chrono::duration<double> dsec;
@@ -903,7 +824,7 @@ int main(int argc, const char *argv[])
   fclose(outputCost);
   fclose(outputWire);
 
-  // free the allocated wire and DS
+  /* FREE TO ALL ! */
   for( int y = 0; y < dim_y; y++){
     for( int x = 0; x < dim_x; x++){
       omp_destroy_lock(&(costs->board[y*dim_y + x].lock));

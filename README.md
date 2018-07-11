@@ -1,7 +1,7 @@
 # Parallel Computer Architecture & Programming (15-418)
+# Assignment 3: Parallel VLSI Wire Routing via OpenMP
 ##### Carngie Mellon University; Todd Mowry and Brian Railing
 
-# Assignment 3: Parallel VLSI Wire Routing via OpenMP
 ## Authors: Jack Kasbeer, Qifang (Charlie) Cai
 ### Created: October, 2016
 ### [Modified: July 4, 2018 07:19 CDT]

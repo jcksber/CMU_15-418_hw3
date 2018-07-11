@@ -1,7 +1,10 @@
-#### Parallel VLSI Wire Routing via OpenMP
+# Parallel Computer Architecture & Programming (15-418)
+### Assignment provided by Carnegie Mellon University, School of Computer Science
+
+# Parallel VLSI Wire Routing via OpenMP
 ## Authors: Jack Kasbeer, Qifang (Charlie) Cai
-## Created: October, 2016
-## [Modified: July 4, 2018 07:19 CDT]
+### Created: October, 2016
+### [Modified: July 4, 2018 07:19 CDT]
 
 ## Overview
 Given input files specifying the dimensions of a 2D grid, along with the end points for a collection of wires, 
@@ -33,8 +36,8 @@ Here's an example of what a potential snapshot of wire routes grid and its corre
 Format: ![Fig. 3: Wire routing example paired with the corresponding cost array](url)
 
 ## Resources
-# Carnegie Mellon Staff & Students
-# 59 cores of an Intel Xeon Phi processor
+* Carnegie Mellon Staff & Students
+* 59 cores of an Intel Xeon Phi processor
 
 ## Directory structure
 ├── code

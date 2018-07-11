@@ -1,6 +1,7 @@
 #### Parallel VLSI Wire Routing via OpenMP
-### Created: October, 2016
-###[Modified: July 4, 2018 07:19 CDT]
+## Authors: Jack Kasbeer, Qifang (Charlie) Cai
+## Created: October, 2016
+## [Modified: July 4, 2018 07:19 CDT]
 
 ## Overview
 Given input files specifying the dimensions of a 2D grid, along with the end points for a collection of wires, 
@@ -8,7 +9,29 @@ we used OpenMP to parallelize our Manhattan-style routes algorithm to produce th
 
 `: In this exercise, an "optimal" solution is one where the fewest possible wire intersections occur for the given wires & grid.
 
-## 
+## Programming Task: Parallel VLSI Wire Routing
+Input files given in the following format:
+
+X_dimension Y_dimension # dimensions of the 2D grid
+number_of_wires         # total number of wires, each of which is described below
+X1 Y1 X2 Y2             # coordinates of the endpoints for wire 0
+X1 Y1 X2 Y2             # coordinates of the endpoints for wire 1
+X1 Y1 X2 Y2             # coordinates of the endpoints for wire 2
+...
+X1 Y1 X2 Y2             # coordinates of the endpoints for wire (number_of_wires - 1)
+
+Figure 1 (above): Format of the input file that describes a particular problem
+
+## Further Algorithmic Details
+Priorities in choosing a route: (1) Select one that minimizes the maximum 'cost array' value along the route 
+(the 'cost array' stores the number of wires that pass through a given point (x,y) on the grid). Next, given a set of equivalent
+maximum 'cost array' values, (2) Miniimize the sum of the 'cost array' values along the entire path.  After this, (3) Ties can be broken arbitrarily.
+
+Here's an example of what a potential snapshot of wire routes grid and its corresponding cost array may look like:
+
+![Figure 3: Example of a potential wire routing](./fig3.png)
+Format: ![Fig. 3: Wire routing example paired with the corresponding cost array](url)
+
 ## Resources
 # Carnegie Mellon Staff & Students
 # 59 cores of an Intel Xeon Phi processor
@@ -58,6 +81,8 @@ we used OpenMP to parallelize our Manhattan-style routes algorithm to produce th
     └── openmp.pdf
         OpenMP tutorial
 
+
+### Progress Notes & Course Info. Provided
 ## Dev Notes from start of project
 # Get started
 0. Read handout

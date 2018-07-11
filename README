@@ -1,8 +1,14 @@
 #### Parallel VLSI Wire Routing via OpenMP
 ### Created: October, 2016
 ###[Modified: July 4, 2018 07:19 CDT]
+
 ## Overview
-Designed a simple C++ framework making it simple to create high-performance, parallel implementations of a number of graph processing algorithms.
+Given input files specifying the dimensions of a 2D grid, along with the end points for a collection of wires, 
+we used OpenMP to parallelize our Manhattan-style routes algorithm to produce the optimal` pathes each wire should take on the (given) 2D grid.
+
+`: In this exercise, an "optimal" solution is one where the fewest possible wire intersections occur for the given wires & grid.
+
+## 
 ## Resources
 # Carnegie Mellon Staff & Students
 # 59 cores of an Intel Xeon Phi processor

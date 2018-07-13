@@ -1,10 +1,10 @@
-# Parallel Computer Architecture & Programming (15-418)
+# Parallel Computer Architecture & Programming (15-418/618)
 # Assignment 3: Parallel VLSI Wire Routing via OpenMP
 ##### Carnegie Mellon University; Todd Mowry and Brian Railing
 
 ### Authors: Jack Kasbeer, Qifang (Charlie) Cai
 ### Created: October, 2016
-### [Modified: July 4, 2018 07:19 CDT]
+### [Modified: July 12, 2018 19:02 CDT]
 
 ## Overview
 Given input files specifying the dimensions of a 2D grid, along with the end points for a collection of wires, 

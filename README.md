@@ -59,7 +59,7 @@ Idea for later ?? Split up work of updating cost array by cells versus by wires
 
 │   │   ├── problemsize
 
-\  	    Input for the question to explore the effect of problem size
+\	    Input for the question to explore the effect of problem size
 	    
 │   │   ├── testinput
 

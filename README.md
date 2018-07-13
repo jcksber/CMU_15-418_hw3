@@ -53,58 +53,34 @@ Idea for later ?? Split up work of updating cost array by cells versus by wires
 		  
 
 ## Directory structure
+```text
 ├── code
-
 │   ├── inputs
-
-│   │   ├── problemsize --> Input for the question to explore the effect of problem size
-	    
+│   │   ├── problemsize --> Input for the question to explore the effect of problem size	    
 │   │   ├── testinput
-
 │   │   └── timeinput
-
 │   ├── jobs
-
-│   │   ├── batch_generate.sh --> Generate jobs in batch, specify the arguments for the program here
-	    
-│   │   ├── example.job.template --> The template for generating the jobs
-	    
-│   │   └── generate_jobs.sh --> The script for the jobs
-	    
+│   │   ├── batch_generate.sh --> Generate jobs in batch, specify the arguments for the program here	    
+│   │   ├── example.job.template --> The template for generating the jobs	    
+│   │   └── generate_jobs.sh --> The script for the jobs	    
 │   ├── latedays
-
-│   │   └── submit.sh --> The script to submit all the jobs in jobs folder to latedays.
-	    
+│   │   └── submit.sh --> The script to submit all the jobs in jobs folder to latedays.	    
 │   ├── Makefile
-
-│   ├── mic.h --> Macros for offload the program to Xeon Phi
-	    
+│   ├── mic.h --> Macros for offload the program to Xeon Phi    
 │   ├── validate.py --> Scripts to validate the consistency of output wire routes and cost array
-			Run "python validate.py -h" to see the instructions to use the script
-	
-│   ├── WireGrapher.java --> Graph the input wires, see handout for instructions
-	
-│   ├── wireroute.cpp --> The code for reading and parsing command line argument and a offload pragma example
-	
+│   ├── WireGrapher.java --> Graph the input wires, see handout for instructions	
+│   ├── wireroute.cpp --> The code for reading and parsing command line argument and a offload pragma example	
 │   ├── wireroute.h
-
 ├── examples --> Examples for OpenMP
-    
 │   ├── hello.c
-
 │   ├── loop.c
-
 │   ├── Makefile
-
 │   ├── README
-
 │   └── sqrt.c
-
 ├── README --> This file
-    
 └── tutorials
-
     └── openmp.pdf --> OpenMP tutorial
+```
 
 
 # Progress Notes & Course Info. Provided

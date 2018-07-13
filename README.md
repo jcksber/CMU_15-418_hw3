@@ -59,7 +59,7 @@ Idea for later ?? Split up work of updating cost array by cells versus by wires
 
 │   │   ├── problemsize
 
-   	    * Input for the question to explore the effect of problem size
+\  	    Input for the question to explore the effect of problem size
 	    
 │   │   ├── testinput
 
@@ -69,55 +69,55 @@ Idea for later ?? Split up work of updating cost array by cells versus by wires
 
 │   │   ├── batch_generate.sh
 
-    	    Generate jobs in batch, specify the arguments for the program here
+\   	    Generate jobs in batch, specify the arguments for the program here
 	    
 │   │   ├── example.job.template
 
-    	    The template for generating the jobs
+\   	    The template for generating the jobs
 	    
 │   │   └── generate_jobs.sh
 
-    	    The script for the jobs
+\   	    The script for the jobs
 	    
 │   ├── latedays
 
 │   │   └── submit.sh
 
-    	    The script to submit all the jobs in jobs folder to latedays.
+\   	    The script to submit all the jobs in jobs folder to latedays.
 	    
 │   ├── Makefile
 
 │   ├── mic.h
 
-	    Macros for offload the program to Xeon Phi
+\	    Macros for offload the program to Xeon Phi
 	    
 │   ├── validate.py
 
-        Scripts to validate the consistency of output wire routes and cost array, please let me know if you find
+ \      Scripts to validate the consistency of output wire routes and cost array, please let me know if you find
 	
-	any problems with this script
+\	any problems with this script
 	
-	Run "python validate.py -h" to see the instructions to use the script
+\	Run "python validate.py -h" to see the instructions to use the script
 	
 │   ├── WireGrapher.java
 
-        Graph the input wires, see handout for instructions
+\       Graph the input wires, see handout for instructions
 	
 │   ├── wireroute.cpp
 
-	The code for reading and parsing command line argument and a offload pragma example
+\	The code for reading and parsing command line argument and a offload pragma example
 	
-	Note that this is provided primarily as an example for offload code to Xeon Phi, you 
+\	Note that this is provided primarily as an example for offload code to Xeon Phi, you 
 	
-	are free to change any code as long as it works for you, we don't have any auto-grader 
+\	are free to change any code as long as it works for you, we don't have any auto-grader 
 	
-	that depend on this code.
+\	that depend on this code.
 	
 │   ├── wireroute.h
 
 ├── examples
 
-    Examples for OpenMP
+\   Examples for OpenMP
     
 │   ├── hello.c
 
@@ -131,13 +131,13 @@ Idea for later ?? Split up work of updating cost array by cells versus by wires
 
 ├── README
 
-    This file
+\   This file
     
 └── tutorials
 
     └── openmp.pdf
     
-        OpenMP tutorial
+\        OpenMP tutorial
 
 
 # Progress Notes & Course Info. Provided
